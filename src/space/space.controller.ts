@@ -2,20 +2,23 @@ import {
   Body,
   Controller,
   Get,
+  Delete,
   HttpException,
   HttpStatus,
   Post,
   Query,
   UseGuards,
+  Param,
 } from '@nestjs/common';
 import { AuthGuard } from '../auth.guard';
 import { AccountId } from '../account.decorator';
 import { MemberService } from '../member/member.service';
 import { AddMemberToSpaceDto, CreateSpaceDto } from './space.dto';
 import { AccountService } from '../account/account.service';
-import { RoleType } from '../role';
 import { SpaceService } from './space.service';
 import { ApplicationSpace } from './space.interface';
+import { RolesGuard } from '../roles.guard';
+import { Roles } from '../roles.decorator';
 
 @Controller('space')
 @UseGuards(AuthGuard)
@@ -55,9 +58,10 @@ export class SpaceController {
     return this.spaceService.getMembers(spaceId);
   }
 
-  @Post('addmember')
+  @Post(':id/member')
   async addMemberToSpace(
     @AccountId() accountId: string,
+    @Param('id') spaceId: number,
     @Body() body: AddMemberToSpaceDto,
   ) {
     const account = await this.accountService.findAccountByEmail(body.email);
@@ -73,7 +77,7 @@ export class SpaceController {
     // Check if user is in group already
     const inSpace = await this.memberService.isMemberInSpace(
       account.id,
-      body.spaceId,
+      spaceId,
     );
 
     if (inSpace) {
@@ -88,10 +92,21 @@ export class SpaceController {
     }
 
     return await this.spaceService.addMemberToSpace({
-      spaceId: body.spaceId,
+      spaceId: spaceId,
       accountId: account.id,
-      role: RoleType.VIEW,
+      role: body.role,
       name: account.name,
     });
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @Delete(':id/member')
+  removeMemberFromSpace(
+    @AccountId() accountId: string,
+    @Body('memberId') memberId: number,
+    @Param('id') spaceId: number,
+  ) {
+    return 'something';
   }
 }

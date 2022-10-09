@@ -11,4 +11,8 @@ export class AuthService {
       ? await this.accountService.findAccountByAccessToken(token)
       : null;
   }
+
+  async getAccountRole(accountId: string, spaceId: number) {
+    return true;
+  }
 }

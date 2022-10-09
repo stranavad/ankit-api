@@ -14,8 +14,5 @@ export class AddMemberToSpaceDto {
   @IsEmail()
   @IsNotEmpty()
   email: string;
-  @IsNumber()
-  @IsNotEmpty()
-  spaceId: number;
   role: RoleType;
 }
