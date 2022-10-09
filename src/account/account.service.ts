@@ -15,4 +15,31 @@ export class AccountService {
       },
     });
   }
+
+  async findAccountByEmail(
+    email: string,
+  ): Promise<{ id: string; name: string } | null> {
+    const account = await this.prisma.account.findFirst({
+      where: {
+        user: {
+          email,
+        },
+      },
+      select: {
+        id: true,
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+    return account
+      ? {
+          id: account.id,
+          name: account.user.name || account.user.email || 'Random user',
+        }
+      : null;
+  }
 }

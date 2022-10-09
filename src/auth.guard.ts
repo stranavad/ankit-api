@@ -16,11 +16,12 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const authorizationHeader = request.headers.authorization || null;
+    let authorizationHeader = request.headers.authorization || null;
 
     if (!authorizationHeader) {
       return false;
     }
+    authorizationHeader = authorizationHeader.split(' ')[1];
 
     const account = await this.authService.getAccountDetails(
       authorizationHeader,
