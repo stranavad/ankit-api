@@ -140,4 +140,45 @@ export class MemberService {
     });
     return !!member;
   }
+
+  async getMemberRole(memberId: number): Promise<RoleType | null> {
+    const member = await this.prisma.member.findUnique({
+      where: {
+        id: memberId,
+      },
+      select: {
+        role: true,
+      },
+    });
+    return member ? parseRole(member.role) : null;
+  }
+
+  deleteMember(memberId: number) {
+    this.prisma.member.delete({
+      where: {
+        id: memberId,
+      },
+    });
+  }
+
+  async deleteOwner(memberId: number, spaceId: number) {
+    // First delete assigned members
+    await this.prisma.member.deleteMany({
+      where: {
+        spaceId,
+      },
+    });
+    // Delete space
+    await this.prisma.space.delete({
+      where: {
+        id: spaceId,
+      },
+    });
+    // Delete owner
+    await this.prisma.member.delete({
+      where: {
+        space,
+      },
+    });
+  }
 }

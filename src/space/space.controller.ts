@@ -1,14 +1,14 @@
 import {
   Body,
   Controller,
-  Get,
   Delete,
+  Get,
   HttpException,
   HttpStatus,
+  Param,
   Post,
   Query,
   UseGuards,
-  Param,
 } from '@nestjs/common';
 import { AuthGuard } from '../auth.guard';
 import { AccountId } from '../account.decorator';
@@ -107,12 +107,26 @@ export class SpaceController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Delete(':id/member')
-  removeMemberFromSpace(
+  async removeMemberFromSpace(
     @AccountId() accountId: string,
     @Body('memberId') memberId: number,
     @Param('id') spaceId: number,
   ) {
-    // TODO if target member has lower role
-    return 'something';
+    const memberRole = await this.memberService.getMemberRole(memberId);
+    if (!memberRole) {
+      throw new HttpException(
+        {
+          status: HttpStatus.BAD_REQUEST,
+          error: `Member '${memberId}' does not exist`,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+      return;
+    }
+    if ([RoleType.VIEW, RoleType.EDIT, RoleType.ADMIN].includes(memberRole)) {
+      await this.memberService.deleteMember(memberId);
+    }
+    // check role hierarchy
+    return 'Successfully deleted';
   }
 }

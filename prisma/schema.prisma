@@ -70,7 +70,7 @@ model Member {
     accountId   String
     account     Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
     spaceId     Int?
-    space       Space?       @relation(fields: [spaceId], references: [id])
+    space       Space?       @relation(fields: [spaceId], references: [id], onDelete: Cascade)
     spaceOwner      Space? @relation("owner")
     created        DateTime        @default(now())
     updated        DateTime        @default(now())
@@ -87,7 +87,7 @@ model Space {
   updated        DateTime        @default(now())
   members        Member[]
   ownerId        Int             @unique
-  owner          Member          @relation("owner", fields: [ownerId], references: [id])
+  owner          Member          @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
 }
 
 // END OF COLLABORATION MODULEs
