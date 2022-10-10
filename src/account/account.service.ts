@@ -16,35 +16,6 @@ export class AccountService {
     });
   }
 
-  async findMemberRoleByAccountId(accountId: string, spaceId: number) {
-    const member = await this.prisma.member.findFirst({
-      where: {
-        OR: [
-          {
-            AND: [
-              {
-                accountId,
-              },
-              {
-                spaceOwner: {
-                  id: spaceId,
-                },
-              },
-            ],
-          },
-          {
-            AND: [
-              {
-                accountId,
-              },
-              { spaceId },
-            ],
-          },
-        ],
-      },
-    });
-  }
-
   async findAccountByEmail(
     email: string,
   ): Promise<{ id: string; name: string } | null> {

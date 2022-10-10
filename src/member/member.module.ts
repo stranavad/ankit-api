@@ -4,5 +4,6 @@ import { PrismaService } from '../prisma.service';
 
 @Module({
   providers: [MemberService, PrismaService],
+  exports: [MemberService],
 })
 export class MemberModule {}

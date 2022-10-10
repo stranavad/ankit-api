@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { AccountService } from '../account/account.service';
 import { Account } from '@prisma/client';
+import { MemberAuth, MemberService } from '../member/member.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private accountService: AccountService) {}
+  constructor(
+    private accountService: AccountService,
+    private memberService: MemberService,
+  ) {}
 
   async getAccountDetails(token: string | null): Promise<Account | null> {
     return token
@@ -12,7 +16,12 @@ export class AuthService {
       : null;
   }
 
-  async getAccountRole(accountId: string, spaceId: number) {
-    return true;
+  async getAccountRole(
+    token: string,
+    spaceId: number,
+  ): Promise<MemberAuth | null> {
+    return token
+      ? await this.memberService.getMemberAuthByAccountToken(token, spaceId)
+      : null;
   }
 }

@@ -38,7 +38,7 @@ export class SpaceService {
           accepted: member.accepted,
           personal: space.personal,
           role: parseRole(member.role),
-          memberCount: space.members.length + 1,
+          memberCount: space.members.length + 1, // + owner
         });
       }
     });

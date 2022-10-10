@@ -19,9 +19,9 @@ import { SpaceService } from './space.service';
 import { ApplicationSpace } from './space.interface';
 import { RolesGuard } from '../roles.guard';
 import { Roles } from '../roles.decorator';
+import { RoleType } from '../role';
 
 @Controller('space')
-@UseGuards(AuthGuard)
 export class SpaceController {
   constructor(
     private memberService: MemberService,
@@ -29,6 +29,7 @@ export class SpaceController {
     private spaceService: SpaceService,
   ) {}
 
+  @UseGuards(AuthGuard)
   @Get()
   async getUserSpaces(
     @AccountId() accountId: string,
@@ -40,6 +41,7 @@ export class SpaceController {
     return this.spaceService.mergeSpaces(members);
   }
 
+  @UseGuards(AuthGuard)
   @Post()
   async createSpace(
     @AccountId() accountId: string,
@@ -53,11 +55,14 @@ export class SpaceController {
     return await this.spaceService.createSpace(data);
   }
 
+  @UseGuards(AuthGuard)
   @Get('members')
   async getSpaceMembers(@Query('spaceId') spaceId: number) {
     return this.spaceService.getMembers(spaceId);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles(RoleType.ADMIN)
   @Post(':id/member')
   async addMemberToSpace(
     @AccountId() accountId: string,
@@ -107,6 +112,7 @@ export class SpaceController {
     @Body('memberId') memberId: number,
     @Param('id') spaceId: number,
   ) {
+    // TODO if target member has lower role
     return 'something';
   }
 }
