@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -80,7 +81,7 @@ export class SpaceController {
       );
     }
     // Check if user is in group already
-    const inSpace = await this.memberService.isMemberInSpace(
+    const inSpace = await this.memberService.isAccountInSpace(
       account.id,
       spaceId,
     );
@@ -102,6 +103,38 @@ export class SpaceController {
       role: body.role,
       name: account.name,
     });
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('owner')
+  @Delete(':id/delete')
+  async deleteSpace(@Param('id') spaceId: number) {
+    // TODO check if deletes all members??
+    await this.spaceService.deleteSpace(spaceId);
+    return 'deleted';
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('owner')
+  @Put(':id/transfer-ownership')
+  async transferSpaceOwnerShip(
+    @Param('id') spaceId: number,
+    @Body('memberId') memberId: number,
+  ) {
+    // Check if member is inspace
+    const isInSpace = this.memberService.isMemberInSpace(memberId, spaceId);
+    if (!isInSpace) {
+      throw new HttpException(
+        {
+          status: HttpStatus.BAD_REQUEST,
+          error: `Member '${memberId}' does not exist or is not in this space`,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+      return;
+    }
+
+    return await this.spaceService.transferOwnership(spaceId, memberId);
   }
 
   @UseGuards(RolesGuard)

@@ -36,6 +36,7 @@ export class MemberService {
       where: {
         id: accountId,
       },
+
       select: {
         members: {
           select: {
@@ -111,7 +112,18 @@ export class MemberService {
       : null;
   }
 
-  async isMemberInSpace(accountId: string, spaceId: number): Promise<boolean> {
+  async isMemberInSpace(memberId: number, spaceId: number): Promise<boolean> {
+    const member = await this.prisma.member.findFirst({
+      where: {
+        id: memberId,
+        spaceId,
+      },
+    });
+    return !!member;
+  }
+
+  // TODO move to account service
+  async isAccountInSpace(accountId: string, spaceId: number): Promise<boolean> {
     const member = await this.prisma.member.findFirst({
       where: {
         OR: [
@@ -161,24 +173,24 @@ export class MemberService {
     });
   }
 
-  async deleteOwner(memberId: number, spaceId: number) {
-    // First delete assigned members
-    await this.prisma.member.deleteMany({
-      where: {
-        spaceId,
-      },
-    });
-    // Delete space
-    await this.prisma.space.delete({
-      where: {
-        id: spaceId,
-      },
-    });
-    // Delete owner
-    await this.prisma.member.delete({
-      where: {
-        space,
-      },
-    });
-  }
+  // async deleteOwner(memberId: number, spaceId: number) {
+  // First delete assigned members
+  // await this.prisma.member.deleteMany({
+  //   where: {
+  //     spaceId,
+  //   },
+  // });
+  // // Delete space
+  // await this.prisma.space.delete({
+  //   where: {
+  //     id: spaceId,
+  //   },
+  // });
+  // // Delete owner
+  // await this.prisma.member.delete({
+  //   where: {
+  //     space,
+  //   },
+  // });
+  // }
 }

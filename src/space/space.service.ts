@@ -152,4 +152,36 @@ export class SpaceService {
     });
     return this.mergeMembers(members, owner);
   }
+
+  async deleteSpace(spaceId: number) {
+    await this.prisma.space.delete({
+      where: {
+        id: spaceId,
+      },
+    });
+  }
+
+  async transferOwnership(memberId: number, spaceId: number) {
+    return await this.prisma.space.update({
+      where: {
+        id: spaceId,
+      },
+      data: {
+        members: {
+          disconnect: {
+            id: memberId,
+          },
+        },
+        owner: {
+          connect: {
+            id: memberId,
+          },
+        },
+      },
+      select: {
+        owner: true,
+        members: true,
+      },
+    });
+  }
 }
