@@ -8,19 +8,24 @@ import {
   Param,
   ParseIntPipe,
   Post,
-  UseGuards
-} from "@nestjs/common";
-import { AuthGuard } from "../auth.guard";
-import { AccountId } from "../account.decorator";
-import { MemberService } from "../member/member.service";
-import { AddMemberToSpaceDto, CreateSpaceDto, TransferOwnership } from "./space.dto";
-import { AccountService } from "../account/account.service";
-import { SpaceService } from "./space.service";
-import { ApplicationSpace } from "./space.interface";
-import { RolesGuard } from "../roles.guard";
-import { Roles } from "../roles.decorator";
-import { RoleType } from "../role";
-import { MemberId } from "../member.decorator";
+  UseGuards,
+} from '@nestjs/common';
+import { AuthGuard } from '../auth.guard';
+import { AccountId } from '../account.decorator';
+import { MemberService } from '../member/member.service';
+import {
+  AddMemberToSpaceDto,
+  CreateSpaceDto,
+  TransferOwnership,
+} from './space.dto';
+import { AccountService } from '../account/account.service';
+import { SpaceService } from './space.service';
+import { ApplicationSpace } from './space.interface';
+import { RolesGuard } from '../roles.guard';
+import { Roles } from '../roles.decorator';
+import { RoleType } from '../role';
+import { MemberId } from '../member.decorator';
+import { Role } from '../role.decorator';
 
 @Controller('space')
 export class SpaceController {
@@ -122,7 +127,10 @@ export class SpaceController {
   ) {
     const { memberId } = body;
     // Check if member is inspace
-    const isInSpace = await this.memberService.isMemberInSpace(memberId, spaceId);
+    const isInSpace = await this.memberService.isMemberInSpace(
+      memberId,
+      spaceId,
+    );
 
     if (!isInSpace) {
       throw new HttpException(
@@ -140,11 +148,12 @@ export class SpaceController {
 
   @UseGuards(RolesGuard)
   @Roles('admin')
-  @Delete(':id/member')
+  @Delete(':id/member/:memberId')
   async removeMemberFromSpace(
     @AccountId() accountId: string,
-    @Body('memberId') memberId: number,
     @Param('id') spaceId: number,
+    @Param('memberId', ParseIntPipe) memberId: number,
+    @Role() role: RoleType,
   ) {
     const memberRole = await this.memberService.getMemberRole(memberId);
     if (!memberRole) {
@@ -156,8 +165,19 @@ export class SpaceController {
         HttpStatus.BAD_REQUEST,
       );
     }
-    if ([RoleType.VIEW, RoleType.EDIT, RoleType.ADMIN].includes(memberRole)) {
+    if (
+      [RoleType.VIEW, RoleType.EDIT].includes(memberRole) ||
+      role === RoleType.OWNER
+    ) {
       await this.memberService.deleteMember(memberId);
+    } else {
+      throw new HttpException(
+        {
+          status: HttpStatus.FORBIDDEN,
+          error: `You do not have enough permissions`,
+        },
+        HttpStatus.FORBIDDEN,
+      );
     }
     // check role hierarchy
     return 'Successfully deleted';

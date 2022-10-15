@@ -1,5 +1,5 @@
-import { Prisma, Member } from '@prisma/client';
-import { parseRole, RoleType } from "../role";
+import { Prisma } from '@prisma/client';
+import { parseRole, RoleType } from '../role';
 
 export interface PrismaApplicationMember {
   id: number;
@@ -8,6 +8,16 @@ export interface PrismaApplicationMember {
   accepted: boolean;
   account: { user: { email: string } };
 }
+
+export const getApplicationMemberFromPrismaApplicationMember = (
+  member: PrismaApplicationMember,
+): ApplicationMember => ({
+  id: member.id,
+  name: member.name,
+  role: parseRole(member.role),
+  accepted: member.accepted,
+  email: member.account.user.email,
+});
 
 export interface ApplicationMember {
   id: number;
@@ -32,4 +42,3 @@ export const selectApplicationMember = Prisma.validator<Prisma.MemberSelect>()({
     },
   },
 });
-

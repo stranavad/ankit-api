@@ -1,6 +1,7 @@
 import { Space } from '@prisma/client';
 import { RoleType } from '../role';
 import { Prisma } from '@prisma/client';
+import { ApplicationMember } from '../member/member.interface';
 
 export interface SimpleSpace extends Pick<Space, 'id' | 'name' | 'personal'> {
   role: RoleType;
@@ -32,4 +33,9 @@ export interface ApplicationSpace
   username: string;
   accepted: boolean;
   memberCount: number;
+}
+
+export interface ApplicationSpaceWithApplicationMembers
+  extends ApplicationSpace {
+  members: ApplicationMember[];
 }

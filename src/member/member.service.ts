@@ -4,7 +4,11 @@ import {
   selectSimpleSpaceWithMemberIds,
   SimpleSpaceWithMemberIds,
 } from '../space/space.interface';
-import { ApplicationMember, selectApplicationMember } from "./member.interface";
+import {
+  ApplicationMember,
+  getApplicationMemberFromPrismaApplicationMember,
+  selectApplicationMember,
+} from './member.interface';
 import { parseRole, RoleType } from '../role';
 
 export interface AllMembersWithSpaces {
@@ -168,15 +172,18 @@ export class MemberService {
     return member ? parseRole(member.role) : null;
   }
 
-  deleteMember(memberId: number) {
-    this.prisma.member.delete({
+  async deleteMember(memberId: number) {
+    return await this.prisma.member.delete({
       where: {
         id: memberId,
       },
     });
   }
 
-  async updateRole(memberId: number, role: RoleType): Promise<ApplicationMember | null> {
+  async updateRole(
+    memberId: number,
+    role: RoleType,
+  ): Promise<ApplicationMember | null> {
     const member = await this.prisma.member.update({
       where: {
         id: memberId,
@@ -186,6 +193,8 @@ export class MemberService {
       },
       select: selectApplicationMember,
     });
-    return member ? { id: member.id, name: member.name, role: parseRole(member.role), accepted: member.accepted, email: member.account.user.email }: null;
+    return member
+      ? getApplicationMemberFromPrismaApplicationMember(member)
+      : null;
   }
 }

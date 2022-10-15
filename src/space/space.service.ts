@@ -1,10 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { parseRole, RoleType } from '../role';
-import { ApplicationSpace, selectSimpleSpace } from './space.interface';
+import {
+  ApplicationSpace,
+  ApplicationSpaceWithApplicationMembers,
+  selectSimpleSpace,
+} from './space.interface';
 import { AllMembersWithSpaces } from '../member/member.service';
 import {
   ApplicationMember,
+  getApplicationMemberFromPrismaApplicationMember,
   PrismaApplicationMember,
   selectApplicationMember,
 } from '../member/member.interface';
@@ -82,20 +87,10 @@ export class SpaceService {
     members: PrismaApplicationMember[],
     owner: PrismaApplicationMember,
   ): ApplicationMember[] {
-    const parsedOwner = {
-      id: owner.id,
-      name: owner.name,
-      accepted: owner.accepted,
-      email: owner.account.user.email,
-      role: parseRole(owner.role),
-    };
-    const parsedMembers = members.map((member) => ({
-      id: member.id,
-      name: member.name,
-      accepted: member.accepted,
-      email: member.account.user.email,
-      role: parseRole(member.role),
-    }));
+    const parsedOwner = getApplicationMemberFromPrismaApplicationMember(owner);
+    const parsedMembers = members.map(
+      getApplicationMemberFromPrismaApplicationMember,
+    );
     return [parsedOwner, ...parsedMembers];
   }
 
@@ -161,8 +156,12 @@ export class SpaceService {
     });
   }
 
-  async transferOwnership(memberId: number, ownerId: number, spaceId: number) {
-    const space = await this.prisma.space.update({
+  async transferOwnership(
+    memberId: number,
+    ownerId: number,
+    spaceId: number,
+  ): Promise<ApplicationSpaceWithApplicationMembers> {
+    const data = await this.prisma.space.update({
       where: {
         id: spaceId,
       },
@@ -182,11 +181,24 @@ export class SpaceService {
         },
       },
       select: {
-        ...selectSimpleSpace,
+        id: true,
+        name: true,
+        personal: true,
         members: { select: selectApplicationMember },
         owner: { select: selectApplicationMember },
       },
     });
-    return space;
+    const members = this.mergeMembers(data.members, data.owner);
+    const currentMember = members.find(({ id }) => id === ownerId);
+    return {
+      id: data.id,
+      name: data.name,
+      personal: data.personal,
+      role: currentMember?.role || RoleType.VIEW,
+      username: currentMember?.name || 'username',
+      accepted: currentMember?.accepted || false,
+      memberCount: members.length + 1,
+      members,
+    };
   }
 }
