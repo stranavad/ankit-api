@@ -1,5 +1,5 @@
-import { IsEmail, IsNotEmpty, IsNumber, IsString } from 'class-validator';
-import { RoleType } from '../role';
+import { IsEmail, IsNotEmpty, IsString, IsNumber } from "class-validator";
+import { RoleType } from "../role";
 
 export class CreateSpaceDto {
   @IsString()
@@ -14,5 +14,13 @@ export class AddMemberToSpaceDto {
   @IsEmail()
   @IsNotEmpty()
   email: string;
-  role: RoleType;
+
+  @IsString()
+  role: RoleType = RoleType.VIEW;
+}
+
+export class TransferOwnership {
+  @IsNumber()
+  @IsNotEmpty()
+  memberId: number;
 }

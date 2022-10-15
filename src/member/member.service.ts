@@ -4,7 +4,7 @@ import {
   selectSimpleSpaceWithMemberIds,
   SimpleSpaceWithMemberIds,
 } from '../space/space.interface';
-import { selectApplicationMember } from './member.interface';
+import { ApplicationMember, selectApplicationMember } from "./member.interface";
 import { parseRole, RoleType } from '../role';
 
 export interface AllMembersWithSpaces {
@@ -36,9 +36,11 @@ export class MemberService {
       where: {
         id: accountId,
       },
-
       select: {
         members: {
+          orderBy: {
+            updated: 'desc',
+          },
           select: {
             ...selectApplicationMember,
             space: {
@@ -119,6 +121,7 @@ export class MemberService {
         spaceId,
       },
     });
+    console.log(member);
     return !!member;
   }
 
@@ -173,24 +176,16 @@ export class MemberService {
     });
   }
 
-  // async deleteOwner(memberId: number, spaceId: number) {
-  // First delete assigned members
-  // await this.prisma.member.deleteMany({
-  //   where: {
-  //     spaceId,
-  //   },
-  // });
-  // // Delete space
-  // await this.prisma.space.delete({
-  //   where: {
-  //     id: spaceId,
-  //   },
-  // });
-  // // Delete owner
-  // await this.prisma.member.delete({
-  //   where: {
-  //     space,
-  //   },
-  // });
-  // }
+  async updateRole(memberId: number, role: RoleType): Promise<ApplicationMember | null> {
+    const member = await this.prisma.member.update({
+      where: {
+        id: memberId,
+      },
+      data: {
+        role: role,
+      },
+      select: selectApplicationMember,
+    });
+    return member ? { id: member.id, name: member.name, role: parseRole(member.role), accepted: member.accepted, email: member.account.user.email }: null;
+  }
 }

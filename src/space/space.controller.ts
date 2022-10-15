@@ -6,21 +6,21 @@ import {
   HttpException,
   HttpStatus,
   Param,
+  ParseIntPipe,
   Post,
-  Put,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import { AuthGuard } from '../auth.guard';
-import { AccountId } from '../account.decorator';
-import { MemberService } from '../member/member.service';
-import { AddMemberToSpaceDto, CreateSpaceDto } from './space.dto';
-import { AccountService } from '../account/account.service';
-import { SpaceService } from './space.service';
-import { ApplicationSpace } from './space.interface';
-import { RolesGuard } from '../roles.guard';
-import { Roles } from '../roles.decorator';
-import { RoleType } from '../role';
+  UseGuards
+} from "@nestjs/common";
+import { AuthGuard } from "../auth.guard";
+import { AccountId } from "../account.decorator";
+import { MemberService } from "../member/member.service";
+import { AddMemberToSpaceDto, CreateSpaceDto, TransferOwnership } from "./space.dto";
+import { AccountService } from "../account/account.service";
+import { SpaceService } from "./space.service";
+import { ApplicationSpace } from "./space.interface";
+import { RolesGuard } from "../roles.guard";
+import { Roles } from "../roles.decorator";
+import { RoleType } from "../role";
+import { MemberId } from "../member.decorator";
 
 @Controller('space')
 export class SpaceController {
@@ -57,8 +57,8 @@ export class SpaceController {
   }
 
   @UseGuards(AuthGuard)
-  @Get('members')
-  async getSpaceMembers(@Query('spaceId') spaceId: number) {
+  @Get(':id/member')
+  async getSpaceMembers(@Param('id', ParseIntPipe) spaceId: number) {
     return this.spaceService.getMembers(spaceId);
   }
 
@@ -67,7 +67,7 @@ export class SpaceController {
   @Post(':id/member')
   async addMemberToSpace(
     @AccountId() accountId: string,
-    @Param('id') spaceId: number,
+    @Param('id', ParseIntPipe) spaceId: number,
     @Body() body: AddMemberToSpaceDto,
   ) {
     const account = await this.accountService.findAccountByEmail(body.email);
@@ -94,7 +94,6 @@ export class SpaceController {
         },
         HttpStatus.BAD_REQUEST,
       );
-      return;
     }
 
     return await this.spaceService.addMemberToSpace({
@@ -106,23 +105,25 @@ export class SpaceController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles('owner')
-  @Delete(':id/delete')
-  async deleteSpace(@Param('id') spaceId: number) {
-    // TODO check if deletes all members??
+  @Roles(RoleType.OWNER)
+  @Delete(':id')
+  async deleteSpace(@Param('id', ParseIntPipe) spaceId: number) {
     await this.spaceService.deleteSpace(spaceId);
     return 'deleted';
   }
 
   @UseGuards(RolesGuard)
   @Roles('owner')
-  @Put(':id/transfer-ownership')
+  @Post(':id/transfer-ownership')
   async transferSpaceOwnerShip(
-    @Param('id') spaceId: number,
-    @Body('memberId') memberId: number,
+    @Param('id', ParseIntPipe) spaceId: number,
+    @Body() body: TransferOwnership,
+    @MemberId() ownerId: number,
   ) {
+    const { memberId } = body;
     // Check if member is inspace
-    const isInSpace = this.memberService.isMemberInSpace(memberId, spaceId);
+    const isInSpace = await this.memberService.isMemberInSpace(memberId, spaceId);
+
     if (!isInSpace) {
       throw new HttpException(
         {
@@ -131,10 +132,10 @@ export class SpaceController {
         },
         HttpStatus.BAD_REQUEST,
       );
-      return;
     }
-
-    return await this.spaceService.transferOwnership(spaceId, memberId);
+    await this.memberService.updateRole(memberId, RoleType.OWNER);
+    await this.memberService.updateRole(ownerId, RoleType.ADMIN);
+    return this.spaceService.transferOwnership(memberId, ownerId, spaceId);
   }
 
   @UseGuards(RolesGuard)
@@ -154,7 +155,6 @@ export class SpaceController {
         },
         HttpStatus.BAD_REQUEST,
       );
-      return;
     }
     if ([RoleType.VIEW, RoleType.EDIT, RoleType.ADMIN].includes(memberRole)) {
       await this.memberService.deleteMember(memberId);

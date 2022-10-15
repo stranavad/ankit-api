@@ -161,8 +161,8 @@ export class SpaceService {
     });
   }
 
-  async transferOwnership(memberId: number, spaceId: number) {
-    return await this.prisma.space.update({
+  async transferOwnership(memberId: number, ownerId: number, spaceId: number) {
+    const space = await this.prisma.space.update({
       where: {
         id: spaceId,
       },
@@ -170,6 +170,9 @@ export class SpaceService {
         members: {
           disconnect: {
             id: memberId,
+          },
+          connect: {
+            id: ownerId,
           },
         },
         owner: {
@@ -179,9 +182,11 @@ export class SpaceService {
         },
       },
       select: {
-        owner: true,
-        members: true,
+        ...selectSimpleSpace,
+        members: { select: selectApplicationMember },
+        owner: { select: selectApplicationMember },
       },
     });
+    return space;
   }
 }
