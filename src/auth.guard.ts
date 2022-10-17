@@ -31,10 +31,10 @@ export class AuthGuard implements CanActivate {
       return false;
     }
 
-    request['accountId'] = account.id;
+    request['userId'] = account.user.id;
 
-    // const currentDate = Date.now();
-    return true;
-    // return expiresAt >= currentDate;
+    return account.expires_at
+      ? account.expires_at >= Math.floor(Date.now() / 1000)
+      : false;
   }
 }

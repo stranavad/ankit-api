@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AccountService } from '../account/account.service';
-import { Account } from '@prisma/client';
 import { MemberAuth, MemberService } from '../member/member.service';
+import { AccountUserAuth } from '../account/account.interface';
 
 @Injectable()
 export class AuthService {
@@ -10,7 +10,9 @@ export class AuthService {
     private memberService: MemberService,
   ) {}
 
-  async getAccountDetails(token: string | null): Promise<Account | null> {
+  async getAccountDetails(
+    token: string | null,
+  ): Promise<AccountUserAuth | null> {
     return token
       ? await this.accountService.findAccountByAccessToken(token)
       : null;
