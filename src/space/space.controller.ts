@@ -26,6 +26,8 @@ import { Roles } from '../roles.decorator';
 import { RoleType } from '../role';
 import { MemberId } from '../member.decorator';
 import { Role } from '../role.decorator';
+import { UserService } from '../user/user.service';
+import { UserId } from '../user.decorator';
 
 @Controller('space')
 export class SpaceController {
@@ -33,14 +35,15 @@ export class SpaceController {
     private memberService: MemberService,
     private accountService: AccountService,
     private spaceService: SpaceService,
+    private userService: UserService,
   ) {}
 
   @UseGuards(AuthGuard)
   @Get()
   async getUserSpaces(
-    @AccountId() accountId: string,
+    @UserId() userId: number,
   ): Promise<ApplicationSpace[] | null> {
-    const members = await this.memberService.getAllMembersWithSpaces(accountId);
+    const members = await this.memberService.getAllMembersWithSpaces(userId);
     if (!members) {
       return null;
     }
@@ -50,11 +53,11 @@ export class SpaceController {
   @UseGuards(AuthGuard)
   @Post()
   async createSpace(
-    @AccountId() accountId: string,
+    @UserId() userId: number,
     @Body() body: CreateSpaceDto,
   ): Promise<ApplicationSpace> {
     const data = {
-      accountId,
+      userId,
       spaceName: body.spaceName,
       memberName: body.memberName,
     };
@@ -64,6 +67,7 @@ export class SpaceController {
   @UseGuards(AuthGuard)
   @Get(':id/member')
   async getSpaceMembers(@Param('id', ParseIntPipe) spaceId: number) {
+    // TODO add check if user in in space - one query possible
     return this.spaceService.getMembers(spaceId);
   }
 
@@ -71,12 +75,12 @@ export class SpaceController {
   @Roles(RoleType.ADMIN)
   @Post(':id/member')
   async addMemberToSpace(
-    @AccountId() accountId: string,
+    @UserId() userId: number,
     @Param('id', ParseIntPipe) spaceId: number,
     @Body() body: AddMemberToSpaceDto,
   ) {
-    const account = await this.accountService.findAccountByEmail(body.email);
-    if (!account) {
+    const user = await this.userService.findUserByEmail(body.email);
+    if (!user) {
       throw new HttpException(
         {
           status: HttpStatus.BAD_REQUEST,
@@ -86,10 +90,7 @@ export class SpaceController {
       );
     }
     // Check if user is in group already
-    const inSpace = await this.memberService.isAccountInSpace(
-      account.id,
-      spaceId,
-    );
+    const inSpace = await this.userService.isUserInSpace(user.id, spaceId);
 
     if (inSpace) {
       throw new HttpException(
@@ -103,9 +104,9 @@ export class SpaceController {
 
     return await this.spaceService.addMemberToSpace({
       spaceId: spaceId,
-      accountId: account.id,
+      userId: user.id,
       role: body.role,
-      name: account.name,
+      name: user.name,
     });
   }
 

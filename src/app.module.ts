@@ -3,8 +3,9 @@ import { SpaceModule } from './space/space.module';
 import { AuthModule } from './auth/auth.module';
 import { AccountModule } from './account/account.module';
 import { MemberModule } from './member/member.module';
+import { UserModule } from './user/user.module';
 
 @Module({
-  imports: [SpaceModule, AuthModule, AccountModule, MemberModule],
+  imports: [SpaceModule, AuthModule, AccountModule, MemberModule, UserModule],
 })
 export class AppModule {}

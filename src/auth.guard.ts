@@ -6,35 +6,39 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { AuthService } from './auth/auth.service';
+import { UserService } from './user/user.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     @Inject(PrismaService) private prismaService: PrismaService,
     @Inject(AuthService) private authService: AuthService,
+    @Inject(UserService) private userService: UserService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    let authorizationHeader = request.headers.authorization || null;
+    const token = this.authService.parseAuthorizationToken(
+      request.headers?.authorization,
+    );
+    const accountId = Number(request.headers.account_id) || null;
 
-    if (!authorizationHeader) {
+    // TODO comparsion with NaN will always result false
+    if (!token || !accountId) {
       return false;
     }
-    authorizationHeader = authorizationHeader.split(' ')[1];
 
-    const account = await this.authService.getAccountDetails(
-      authorizationHeader,
+    const userAuth = await this.userService.findUserIdByAccessToken(
+      accountId,
+      token,
     );
 
-    if (!account) {
+    if (!userAuth || userAuth.accessToken !== token) {
       return false;
     }
 
-    request['userId'] = account.user.id;
+    request['userId'] = userAuth.id;
 
-    return account.expires_at
-      ? account.expires_at >= Math.floor(Date.now() / 1000)
-      : false;
+    return this.authService.isExpiresAtValid(userAuth.expiresAt);
   }
 }

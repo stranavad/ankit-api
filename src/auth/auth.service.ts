@@ -1,29 +1,34 @@
 import { Injectable } from '@nestjs/common';
-import { AccountService } from '../account/account.service';
-import { MemberAuth, MemberService } from '../member/member.service';
-import { AccountUserAuth } from '../account/account.interface';
+import { RoleType } from '../role';
 
 @Injectable()
 export class AuthService {
-  constructor(
-    private accountService: AccountService,
-    private memberService: MemberService,
-  ) {}
-
-  async getAccountDetails(
-    token: string | null,
-  ): Promise<AccountUserAuth | null> {
-    return token
-      ? await this.accountService.findAccountByAccessToken(token)
-      : null;
+  isExpiresAtValid(expiresAt: number | null): boolean {
+    const currentData = Math.floor(Date.now() / 1000);
+    return expiresAt ? expiresAt >= currentData : false;
   }
 
-  async getAccountRole(
-    token: string,
-    spaceId: number,
-  ): Promise<MemberAuth | null> {
-    return token
-      ? await this.memberService.getMemberAuthByAccountToken(token, spaceId)
-      : null;
+  parseAuthorizationToken(header: string): string | null {
+    return header?.split(' ')[1] || null;
+  }
+
+  isRoleEnough(requiredRole: RoleType, actualRole: RoleType): boolean {
+    switch (requiredRole) {
+      case RoleType.VIEW:
+        return [
+          RoleType.OWNER,
+          RoleType.ADMIN,
+          RoleType.EDIT,
+          RoleType.VIEW,
+        ].includes(actualRole);
+      case RoleType.EDIT:
+        return [RoleType.OWNER, RoleType.ADMIN, RoleType.EDIT].includes(
+          actualRole,
+        );
+      case RoleType.ADMIN:
+        return [RoleType.OWNER, RoleType.ADMIN].includes(actualRole);
+      case RoleType.OWNER:
+        return actualRole === RoleType.OWNER;
+    }
   }
 }

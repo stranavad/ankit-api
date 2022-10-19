@@ -7,57 +7,62 @@ import {
 import { Reflector } from '@nestjs/core';
 import { AuthService } from './auth/auth.service';
 import { RoleType } from './role';
+import { AccountService } from './account/account.service';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
     @Inject(AuthService) private authService: AuthService,
+    @Inject(AccountService) private accountService: AccountService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const roles = this.reflector.get<RoleType[]>('roles', context.getHandler());
-    // Generate roles hierarchy
-    if (roles[0] === RoleType.ADMIN) {
-      roles.push(RoleType.OWNER);
-    } else if (roles[0] === RoleType.EDIT) {
-      roles.push(RoleType.ADMIN, RoleType.OWNER);
-    } else if (roles[0] === RoleType.VIEW) {
-      roles.push(RoleType.EDIT, RoleType.ADMIN, RoleType.OWNER);
-    }
 
     if (!roles) {
+      console.error('You have not specified role for RoleGuard');
       return false;
     }
 
     const request = context.switchToHttp().getRequest();
-    let authorizationHeader = request.headers.authorization || null;
 
-    if (!authorizationHeader) {
-      return false;
-    }
-    authorizationHeader = authorizationHeader.split(' ')[1];
-
-    const member = await this.authService.getAccountRole(
-      authorizationHeader,
-      parseInt(request.params['id']),
+    const token = this.authService.parseAuthorizationToken(
+      request.headers.authorization,
     );
 
-    if (!member) {
+    const accountId = Number(request.headers.account_id) || null;
+    const spaceId = Number(request.params['id']) || null;
+
+    // TODO check for NaN
+    if (
+      !token ||
+      !accountId ||
+      // accountId === NaN ||
+      !spaceId
+      // spaceId === NaN
+    ) {
       return false;
     }
 
-    // const currentDate = Date.now();
-    // return member.expires_at >= currentDate;
-
-    request['accountId'] = member.accountId;
-    request['memberId'] = member.id;
-    request['role'] = member.role;
-    const currentData = Math.floor(Date.now() / 1000);
-    return (
-      roles.includes(member.role) &&
-      !!member.expires_at &&
-      member.expires_at >= currentData
+    const memberAuth = await this.accountService.getMemberDetailsByAccessToken(
+      accountId,
+      token,
+      spaceId,
     );
+
+    if (
+      !memberAuth ||
+      token !== memberAuth.accessToken ||
+      !this.authService.isExpiresAtValid(memberAuth.expiresAt)
+    ) {
+      return false;
+    }
+
+    request['userId'] = memberAuth.userId;
+    request['memberId'] = memberAuth.memberId;
+    request['role'] = memberAuth.role;
+
+    return this.authService.isRoleEnough(roles[0], memberAuth.role);
   }
 }

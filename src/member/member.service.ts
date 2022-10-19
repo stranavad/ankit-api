@@ -22,23 +22,38 @@ export interface AllMembersWithSpaces {
   }[];
 }
 
-export interface MemberAuth {
-  id: number;
-  role: RoleType;
-  accountId: string;
-  expires_at: number | null;
-}
-
 @Injectable()
 export class MemberService {
   constructor(private prisma: PrismaService) {}
 
-  getAllMembersWithSpaces(
-    accountId: string,
-  ): Promise<AllMembersWithSpaces | null> {
-    return this.prisma.account.findUnique({
+  createDefaultMember(userId: number) {
+    return this.prisma.user.update({
       where: {
-        id: accountId,
+        id: userId,
+      },
+      data: {
+        members: {
+          create: {
+            name: 'Me',
+            accepted: true,
+            role: RoleType.OWNER,
+            spaceOwner: {
+              create: {
+                name: 'Personal space',
+                personal: true,
+                description: 'This is your personal space',
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  getAllMembersWithSpaces(userId: number): Promise<any | null> {
+    return this.prisma.user.findUnique({
+      where: {
+        id: userId,
       },
       select: {
         members: {
@@ -63,61 +78,6 @@ export class MemberService {
     });
   }
 
-  async getMemberAuthByAccountToken(
-    access_token: string,
-    spaceId: number,
-  ): Promise<MemberAuth | null> {
-    const member = await this.prisma.member.findFirst({
-      where: {
-        OR: [
-          {
-            AND: [
-              {
-                account: {
-                  access_token,
-                },
-              },
-              {
-                spaceOwner: {
-                  id: spaceId,
-                },
-              },
-            ],
-          },
-          {
-            AND: [
-              {
-                account: {
-                  access_token,
-                },
-              },
-              { spaceId },
-            ],
-          },
-        ],
-      },
-      select: {
-        id: true,
-        role: true,
-        accountId: true,
-        account: {
-          select: {
-            expires_at: true,
-          },
-        },
-      },
-    });
-
-    return member
-      ? {
-          id: member.id,
-          role: parseRole(member.role),
-          accountId: member.accountId,
-          expires_at: member.account.expires_at,
-        }
-      : null;
-  }
-
   async isMemberInSpace(memberId: number, spaceId: number): Promise<boolean> {
     const member = await this.prisma.member.findFirst({
       where: {
@@ -126,37 +86,6 @@ export class MemberService {
       },
     });
     console.log(member);
-    return !!member;
-  }
-
-  // TODO move to account service
-  async isAccountInSpace(accountId: string, spaceId: number): Promise<boolean> {
-    const member = await this.prisma.member.findFirst({
-      where: {
-        OR: [
-          {
-            AND: [
-              {
-                accountId,
-              },
-              {
-                spaceOwner: {
-                  id: spaceId,
-                },
-              },
-            ],
-          },
-          {
-            AND: [
-              {
-                accountId,
-              },
-              { spaceId },
-            ],
-          },
-        ],
-      },
-    });
     return !!member;
   }
 

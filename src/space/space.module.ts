@@ -4,9 +4,16 @@ import { SpaceService } from './space.service';
 import { PrismaService } from '../prisma.service';
 import { MemberService } from '../member/member.service';
 import { AccountService } from '../account/account.service';
+import { UserService } from '../user/user.service';
 
 @Module({
   controllers: [SpaceController],
-  providers: [SpaceService, PrismaService, MemberService, AccountService],
+  providers: [
+    SpaceService,
+    PrismaService,
+    MemberService,
+    AccountService,
+    UserService,
+  ],
 })
 export class SpaceModule {}

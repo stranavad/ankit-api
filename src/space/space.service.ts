@@ -15,14 +15,14 @@ import {
 } from '../member/member.interface';
 
 export interface CreateSpace {
-  accountId: string;
+  userId: number;
   spaceName: string;
   memberName: string;
 }
 
 export interface AddMember {
   spaceId: number;
-  accountId: string;
+  userId: number;
   role: RoleType;
   name: string;
 }
@@ -51,7 +51,7 @@ export class SpaceService {
   }
 
   async createSpace({
-    accountId,
+    userId,
     spaceName,
     memberName,
   }: CreateSpace): Promise<ApplicationSpace> {
@@ -63,9 +63,9 @@ export class SpaceService {
             name: memberName,
             accepted: true,
             role: RoleType.OWNER,
-            account: {
+            user: {
               connect: {
-                id: accountId,
+                id: userId,
               },
             },
           },
@@ -114,7 +114,7 @@ export class SpaceService {
 
   async addMemberToSpace({
     spaceId,
-    accountId,
+    userId,
     role,
     name,
   }: AddMember): Promise<ApplicationMember[]> {
@@ -128,9 +128,9 @@ export class SpaceService {
             name,
             role,
             accepted: false,
-            account: {
+            user: {
               connect: {
-                id: accountId,
+                id: userId,
               },
             },
           },
