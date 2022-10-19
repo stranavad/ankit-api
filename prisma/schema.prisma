@@ -29,6 +29,7 @@ model User {
   image         String?
   accounts      Account[]
   sessions      Session[]
+  members       Member[]
 }
 
 model VerificationToken {
@@ -54,7 +55,6 @@ model Account {
   id_token          String?         @db.Text
   session_state     String?
   user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  members           Member[]
 
   @@unique([provider, providerAccountId])
   @@index([userId], map: "Account_userId_fkey")
@@ -67,15 +67,15 @@ model Member {
     name        String
     role        String
     accepted    Boolean     @default(false)
-    accountId   String
-    account     Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+    userId      String
+    user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
     spaceId     Int?
     space       Space?       @relation(fields: [spaceId], references: [id], onDelete: Cascade)
     spaceOwner      Space? @relation("owner")
     created        DateTime        @default(now())
     updated        DateTime        @default(now())
 
-    @@unique([accountId, spaceId])
+    @@unique([userId, spaceId])
 }
 
 model Space {

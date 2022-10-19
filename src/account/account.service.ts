@@ -1,16 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { Account } from '@prisma/client';
+import { AccountUserAuth } from './account.interface';
 
 @Injectable()
 export class AccountService {
   constructor(private prisma: PrismaService) {}
 
-  findAccountByAccessToken(token: string): Promise<Account | null> {
+  findAccountByAccessToken(token: string): Promise<AccountUserAuth | null> {
     return this.prisma.account.findFirst({
       where: {
         access_token: {
           equals: token,
+        },
+      },
+      select: {
+        expires_at: true,
+        user: {
+          select: {
+            id: true,
+          },
         },
       },
     });
