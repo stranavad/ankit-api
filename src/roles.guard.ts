@@ -53,6 +53,11 @@ export class RolesGuard implements CanActivate {
     request['accountId'] = member.accountId;
     request['memberId'] = member.id;
     request['role'] = member.role;
-    return roles.includes(member.role);
+    const currentData = Math.floor(Date.now() / 1000);
+    return (
+      roles.includes(member.role) &&
+      !!member.expires_at &&
+      member.expires_at >= currentData
+    );
   }
 }

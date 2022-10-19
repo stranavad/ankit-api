@@ -33,8 +33,8 @@ export class AuthGuard implements CanActivate {
 
     request['accountId'] = account.id;
 
-    // const currentDate = Date.now();
-    return true;
-    // return expiresAt >= currentDate;
+    const currentDate = Math.floor(Date.now() / 1000);
+    // return true;
+    return account.expires_at ? account.expires_at >= currentDate : false;
   }
 }
