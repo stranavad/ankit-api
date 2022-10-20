@@ -1,40 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 
-interface UserAuth {
-  id: number | null;
-  accessToken: string | null;
-  expiresAt: number | null;
-}
-
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
-
-  async findUserIdByAccessToken(id: number): Promise<UserAuth | null> {
-    const account = await this.prisma.account.findUnique({
-      where: {
-        id,
-      },
-      select: {
-        access_token: true,
-        expires_at: true,
-        user: {
-          select: {
-            id: true,
-          },
-        },
-      },
-    });
-
-    return account
-      ? {
-          id: account.user.id,
-          accessToken: account.access_token,
-          expiresAt: account.expires_at,
-        }
-      : null;
-  }
 
   async findUserByEmail(
     email: string,

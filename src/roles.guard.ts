@@ -31,29 +31,22 @@ export class RolesGuard implements CanActivate {
       request.headers.authorization,
     );
 
-    const accountId = Number(request.headers.account_id) || null;
+    const userId = Number(request.headers.userid) || null;
     const spaceId = Number(request.params['id']) || null;
 
     // TODO check for NaN
-    if (
-      !token ||
-      !accountId ||
-      // accountId === NaN ||
-      !spaceId
-      // spaceId === NaN
-    ) {
+    if (!token || !userId || !spaceId) {
       return false;
     }
 
     const memberAuth = await this.accountService.getMemberDetailsByAccessToken(
-      accountId,
+      userId,
       token,
       spaceId,
     );
 
     if (
       !memberAuth ||
-      token !== memberAuth.accessToken ||
       !this.authService.isExpiresAtValid(memberAuth.expiresAt)
     ) {
       return false;

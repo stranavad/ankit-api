@@ -7,6 +7,7 @@ import {
 import { PrismaService } from './prisma.service';
 import { AuthService } from './auth/auth.service';
 import { UserService } from './user/user.service';
+import { AccountService } from './account/account.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -14,6 +15,7 @@ export class AuthGuard implements CanActivate {
     @Inject(PrismaService) private prismaService: PrismaService,
     @Inject(AuthService) private authService: AuthService,
     @Inject(UserService) private userService: UserService,
+    @Inject(AccountService) private accountService: AccountService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -21,19 +23,17 @@ export class AuthGuard implements CanActivate {
     const token = this.authService.parseAuthorizationToken(
       request.headers?.authorization,
     );
-    const accountId = Number(request.headers.account_id) || null;
-
-    // TODO comparsion with NaN will always result false
-    if (!token || !accountId) {
+    const userId = Number(request.headers.userid) || null;
+    if (!token || !userId) {
       return false;
     }
 
-    const userAuth = await this.userService.findUserIdByAccessToken(
-      accountId,
+    const userAuth = await this.accountService.findAccountByUserId(
+      userId,
       token,
     );
 
-    if (!userAuth || userAuth.accessToken !== token) {
+    if (!userAuth) {
       return false;
     }
 

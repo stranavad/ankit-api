@@ -10,44 +10,55 @@ interface MemberAuth {
   userId: number;
 }
 
+interface UserAuth {
+  id: number | null;
+  accessToken: string | null;
+  expiresAt: number | null;
+}
+
 @Injectable()
 export class AccountService {
   constructor(private prisma: PrismaService) {}
 
-  // async findAccountByEmail(
-  //   email: string,
-  // ): Promise<{ id: string; name: string } | null> {
-  //   const account = await this.prisma.account.findFirst({
-  //     where: {
-  //       user: {
-  //         email,
-  //       },
-  //     },
-  //     select: {
-  //       id: true,
-  //       user: {
-  //         select: {
-  //           name: true,
-  //           email: true,
-  //         },
-  //       },
-  //     },
-  //   });
-  //   return account
-  //     ? {
-  //         id: account.id,
-  //         name: account.user.name || account.user.email || 'Random user',
-  //       }
-  //     : null;
-  // }
+  async findAccountByUserId(
+    userId: number,
+    accessToken: string,
+  ): Promise<UserAuth | null> {
+    const accounts = await this.prisma.account.findMany({
+      where: {
+        userId,
+      },
+      select: {
+        access_token: true,
+        expires_at: true,
+        user: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+    const account =
+      accounts.find((account) => account.access_token === accessToken) || null;
+
+    return account
+      ? {
+          id: account.user.id,
+          accessToken: account.access_token,
+          expiresAt: account.expires_at,
+        }
+      : null;
+  }
+
   async getMemberDetailsByAccessToken(
-    accountId: number,
+    userId: number,
     token: string,
     spaceId: number,
   ): Promise<MemberAuth | null> {
-    const account = await this.prisma.account.findUnique({
+    const accounts = await this.prisma.account.findMany({
       where: {
-        id: accountId,
+        userId,
       },
       select: {
         access_token: true,
@@ -68,6 +79,9 @@ export class AccountService {
         },
       },
     });
+
+    const account =
+      accounts.find((account) => account.access_token === token) || null;
 
     if (!account) {
       return null;
