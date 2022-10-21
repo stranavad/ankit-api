@@ -112,6 +112,33 @@ export class SpaceService {
     return space ? this.mergeMembers(space.members, space.owner) : null;
   }
 
+  // async updateSpace(
+  //   data: UpdateSpaceData,
+  //   id: number,
+  //   memberId: number,
+  // ): Promise<ApplicationSpace | null> {
+  //   const space = await this.prisma.member.update({
+  //     where: {
+  //       id: memberId,
+  //     },
+  //     data: {
+  //       space: {
+  //         update: data,
+  //       },
+  //       spaceOwner: {
+  //         update: data,
+  //       },
+  //     },
+  //     select: {
+  //       id: true,
+  //       role: true,
+  //       name: true,
+  //       accepted: true,
+  //       space: {},
+  //     },
+  //   });
+  // }
+
   async addMemberToSpace({
     spaceId,
     userId,
@@ -149,9 +176,22 @@ export class SpaceService {
   }
 
   async deleteSpace(spaceId: number) {
-    await this.prisma.space.delete({
+    const memberId = await this.prisma.member.findFirst({
       where: {
-        id: spaceId,
+        spaceOwner: {
+          id: spaceId,
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+    if (!memberId) {
+      return;
+    }
+    await this.prisma.member.delete({
+      where: {
+        id: memberId.id,
       },
     });
   }

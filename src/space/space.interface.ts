@@ -27,6 +27,12 @@ export const selectSimpleSpaceWithMemberIds =
     },
   });
 
+export const selectApplicationSpace = Prisma.validator<Prisma.SpaceSelect>()({
+  id: true,
+  name: true,
+  personal: true,
+});
+
 export interface ApplicationSpace
   extends Pick<Space, 'id' | 'name' | 'personal'> {
   role: RoleType;
@@ -38,4 +44,9 @@ export interface ApplicationSpace
 export interface ApplicationSpaceWithApplicationMembers
   extends ApplicationSpace {
   members: ApplicationMember[];
+}
+
+export interface UpdateSpaceData {
+  name?: string;
+  description?: string;
 }

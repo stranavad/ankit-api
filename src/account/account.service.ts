@@ -8,6 +8,7 @@ interface MemberAuth {
   memberId: number;
   role: RoleType;
   userId: number;
+  spaceId: number;
 }
 
 interface UserAuth {
@@ -68,11 +69,30 @@ export class AccountService {
             id: true,
             members: {
               where: {
-                spaceId,
+                OR: [
+                  {
+                    spaceId,
+                  },
+                  {
+                    spaceOwner: {
+                      id: spaceId,
+                    },
+                  },
+                ],
               },
               select: {
                 id: true,
                 role: true,
+                space: {
+                  select: {
+                    id: true,
+                  },
+                },
+                spaceOwner: {
+                  select: {
+                    id: true,
+                  },
+                },
               },
             },
           },
@@ -83,7 +103,11 @@ export class AccountService {
     const account =
       accounts.find((account) => account.access_token === token) || null;
 
-    if (!account) {
+    if (
+      !account ||
+      !account.user.members[0]?.space?.id ||
+      !account.user.members[0]?.spaceOwner?.id
+    ) {
       return null;
     }
 
@@ -93,6 +117,9 @@ export class AccountService {
       memberId: account.user.members[0].id,
       role: parseRole(account.user.members[0].role),
       userId: account.user.id,
+      spaceId:
+        account.user.members[0].space.id ||
+        account.user.members[0].spaceOwner.id,
     };
   }
 }

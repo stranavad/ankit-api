@@ -85,7 +85,6 @@ export class MemberService {
         spaceId,
       },
     });
-    console.log(member);
     return !!member;
   }
 

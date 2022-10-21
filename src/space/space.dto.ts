@@ -1,5 +1,5 @@
-import { IsEmail, IsNotEmpty, IsString, IsNumber } from "class-validator";
-import { RoleType } from "../role";
+import { IsEmail, IsNotEmpty, IsString, IsNumber } from 'class-validator';
+import { RoleType } from '../role';
 
 export class CreateSpaceDto {
   @IsString()
@@ -8,6 +8,14 @@ export class CreateSpaceDto {
   @IsString()
   @IsNotEmpty()
   memberName: string;
+}
+
+export class UpdateSpaceDto {
+  @IsString()
+  name: string;
+
+  @IsString()
+  description: string;
 }
 
 export class AddMemberToSpaceDto {

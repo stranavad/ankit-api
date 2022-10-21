@@ -32,7 +32,7 @@ export class RolesGuard implements CanActivate {
     );
 
     const userId = Number(request.headers.userid) || null;
-    const spaceId = Number(request.params['id']) || null;
+    const spaceId = Number(request.params.id) || null;
 
     // TODO check for NaN
     if (!token || !userId || !spaceId) {
@@ -55,6 +55,7 @@ export class RolesGuard implements CanActivate {
     request['userId'] = memberAuth.userId;
     request['memberId'] = memberAuth.memberId;
     request['role'] = memberAuth.role;
+    request['spaceId'] = memberAuth.spaceId;
 
     return this.authService.isRoleEnough(roles[0], memberAuth.role);
   }

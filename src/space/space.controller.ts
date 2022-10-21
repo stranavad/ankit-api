@@ -8,6 +8,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '../auth.guard';
@@ -17,10 +18,11 @@ import {
   AddMemberToSpaceDto,
   CreateSpaceDto,
   TransferOwnership,
+  UpdateSpaceDto,
 } from './space.dto';
 import { AccountService } from '../account/account.service';
 import { SpaceService } from './space.service';
-import { ApplicationSpace } from './space.interface';
+import { ApplicationSpace, UpdateSpaceData } from './space.interface';
 import { RolesGuard } from '../roles.guard';
 import { Roles } from '../roles.decorator';
 import { RoleType } from '../role';
@@ -28,6 +30,7 @@ import { MemberId } from '../member.decorator';
 import { Role } from '../role.decorator';
 import { UserService } from '../user/user.service';
 import { UserId } from '../user.decorator';
+import { SpaceId } from '../space.decorator';
 
 @Controller('space')
 export class SpaceController {
@@ -62,6 +65,24 @@ export class SpaceController {
       memberName: body.memberName,
     };
     return await this.spaceService.createSpace(data);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @Put(':id')
+  async updateSpace(
+    @SpaceId() spaceId: number,
+    @Body() data: UpdateSpaceDto,
+  ): Promise<ApplicationSpace | null> {
+    const updateData: UpdateSpaceData = {};
+
+    if (data.name) {
+      updateData['name'] = data.name;
+    }
+    if (data.description) {
+      updateData['description'] = data.description;
+    }
+    return null;
   }
 
   @UseGuards(AuthGuard)
