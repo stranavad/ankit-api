@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { parseRole, RoleType } from '../role';
+import { SimpleSpace } from '../space/space.interface';
 
 export interface PrismaApplicationMember {
   id: number;
@@ -18,6 +19,11 @@ export const getApplicationMemberFromPrismaApplicationMember = (
   accepted: member.accepted,
   email: member.user.email,
 });
+
+export const getApplicationMembersFromPrismaApplicationMembers = (
+  members: PrismaApplicationMember[],
+): ApplicationMember[] =>
+  members.map(getApplicationMemberFromPrismaApplicationMember);
 
 export interface ApplicationMember {
   id: number;
@@ -38,3 +44,17 @@ export const selectApplicationMember = Prisma.validator<Prisma.MemberSelect>()({
     },
   },
 });
+
+export interface AllMembersWithSpaces {
+  members: {
+    id: number;
+    name: string;
+    role: string;
+    accepted: boolean;
+    space: Omit<SimpleSpace, 'role'>;
+  }[];
+}
+
+export interface UpdateMemberData {
+  name: string;
+}

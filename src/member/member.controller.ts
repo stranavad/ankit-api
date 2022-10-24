@@ -1,6 +1,5 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { MemberService } from './member.service';
-
 // @UseGuards(AuthGuard)
 @Controller('member')
 export class MemberController {

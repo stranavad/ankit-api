@@ -69,26 +69,12 @@ export class AccountService {
             id: true,
             members: {
               where: {
-                OR: [
-                  {
-                    spaceId,
-                  },
-                  {
-                    spaceOwner: {
-                      id: spaceId,
-                    },
-                  },
-                ],
+                spaceId,
               },
               select: {
                 id: true,
                 role: true,
                 space: {
-                  select: {
-                    id: true,
-                  },
-                },
-                spaceOwner: {
                   select: {
                     id: true,
                   },
@@ -103,11 +89,7 @@ export class AccountService {
     const account =
       accounts.find((account) => account.access_token === token) || null;
 
-    if (
-      !account ||
-      !account.user.members[0]?.space?.id ||
-      !account.user.members[0]?.spaceOwner?.id
-    ) {
+    if (!account || !account.user.members[0]?.space?.id) {
       return null;
     }
 
@@ -117,9 +99,7 @@ export class AccountService {
       memberId: account.user.members[0].id,
       role: parseRole(account.user.members[0].role),
       userId: account.user.id,
-      spaceId:
-        account.user.members[0].space.id ||
-        account.user.members[0].spaceOwner.id,
+      spaceId: account.user.members[0].space.id,
     };
   }
 }

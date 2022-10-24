@@ -12,10 +12,10 @@ export class CreateSpaceDto {
 
 export class UpdateSpaceDto {
   @IsString()
+  @IsNotEmpty()
   name: string;
 
-  @IsString()
-  description: string;
+  description: string | null = null;
 }
 
 export class AddMemberToSpaceDto {
@@ -31,4 +31,15 @@ export class TransferOwnership {
   @IsNumber()
   @IsNotEmpty()
   memberId: number;
+}
+
+export class GetUserSpaces {
+  accepted: boolean | null = null;
+  search: string | null = null;
+}
+
+export class UpdateSpaceMemberDto {
+  @IsString()
+  @IsNotEmpty()
+  name: string;
 }

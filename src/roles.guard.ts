@@ -1,6 +1,8 @@
 import {
   CanActivate,
   ExecutionContext,
+  HttpException,
+  HttpStatus,
   Inject,
   Injectable,
 } from '@nestjs/common';
@@ -49,7 +51,13 @@ export class RolesGuard implements CanActivate {
       !memberAuth ||
       !this.authService.isExpiresAtValid(memberAuth.expiresAt)
     ) {
-      return false;
+      throw new HttpException(
+        {
+          status: HttpStatus.BAD_REQUEST,
+          error: `Doesn't belong to space`,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     request['userId'] = memberAuth.userId;

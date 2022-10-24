@@ -3,15 +3,17 @@ import { PrismaService } from '../prisma.service';
 import { parseRole, RoleType } from '../role';
 import {
   ApplicationSpace,
-  ApplicationSpaceWithApplicationMembers,
+  DetailSpace,
+  selectDetailSpace,
   selectSimpleSpace,
+  UpdateSpaceData,
 } from './space.interface';
-import { AllMembersWithSpaces } from '../member/member.service';
 import {
   ApplicationMember,
   getApplicationMemberFromPrismaApplicationMember,
-  PrismaApplicationMember,
+  getApplicationMembersFromPrismaApplicationMembers,
   selectApplicationMember,
+  UpdateMemberData,
 } from '../member/member.interface';
 
 export interface CreateSpace {
@@ -30,26 +32,6 @@ export interface AddMember {
 @Injectable()
 export class SpaceService {
   constructor(private prisma: PrismaService) {}
-
-  mergeSpaces(members: AllMembersWithSpaces): ApplicationSpace[] {
-    const spaces: ApplicationSpace[] = [];
-    members.members.forEach((member) => {
-      const space = member.space || member.spaceOwner;
-      if (space) {
-        spaces.push({
-          id: space.id,
-          name: space.name,
-          username: member.name,
-          accepted: member.accepted,
-          personal: space.personal,
-          role: parseRole(member.role),
-          memberCount: space.members.length + 1, // + owner
-        });
-      }
-    });
-    return spaces;
-  }
-
   async createSpace({
     userId,
     spaceName,
@@ -58,7 +40,7 @@ export class SpaceService {
     const space = await this.prisma.space.create({
       data: {
         name: spaceName,
-        owner: {
+        members: {
           create: {
             name: memberName,
             accepted: true,
@@ -71,27 +53,65 @@ export class SpaceService {
           },
         },
       },
-      select: selectSimpleSpace,
+      select: {
+        ...selectSimpleSpace,
+        members: {
+          where: {
+            userId,
+          },
+          select: {
+            accepted: true,
+            role: true,
+            name: true,
+          },
+        },
+      },
     });
 
     return {
-      ...space,
-      accepted: true,
-      role: RoleType.OWNER,
-      username: memberName,
-      memberCount: 1,
+      id: space.id,
+      name: space.name,
+      personal: space.personal,
+      accepted: space.members[0].accepted,
+      role: parseRole(space.members[0].role),
+      username: space.members[0].name,
     };
   }
 
-  mergeMembers(
-    members: PrismaApplicationMember[],
-    owner: PrismaApplicationMember,
-  ): ApplicationMember[] {
-    const parsedOwner = getApplicationMemberFromPrismaApplicationMember(owner);
-    const parsedMembers = members.map(
-      getApplicationMemberFromPrismaApplicationMember,
-    );
-    return [parsedOwner, ...parsedMembers];
+  async updateSpaceMember(
+    data: UpdateMemberData,
+    spaceId: number,
+    userId: number,
+  ): Promise<ApplicationSpace | null> {
+    const member = await this.prisma.member.update({
+      where: {
+        userId_spaceId: {
+          userId,
+          spaceId,
+        },
+      },
+      data: {
+        name: data.name,
+      },
+      select: {
+        ...selectApplicationMember,
+        space: {
+          select: selectSimpleSpace,
+        },
+      },
+    });
+
+    if (!member) {
+      return null;
+    }
+    return {
+      id: member.space.id,
+      name: member.space.name,
+      personal: member.space.personal,
+      role: parseRole(member.role),
+      username: member.name,
+      accepted: member.accepted,
+    };
   }
 
   async getMembers(spaceId: number): Promise<ApplicationMember[] | null> {
@@ -100,44 +120,51 @@ export class SpaceService {
         id: spaceId,
       },
       select: {
-        owner: {
-          select: selectApplicationMember,
-        },
         members: {
           select: selectApplicationMember,
         },
       },
     });
 
-    return space ? this.mergeMembers(space.members, space.owner) : null;
+    return space
+      ? space.members.map(getApplicationMemberFromPrismaApplicationMember)
+      : null;
   }
 
-  // async updateSpace(
-  //   data: UpdateSpaceData,
-  //   id: number,
-  //   memberId: number,
-  // ): Promise<ApplicationSpace | null> {
-  //   const space = await this.prisma.member.update({
-  //     where: {
-  //       id: memberId,
-  //     },
-  //     data: {
-  //       space: {
-  //         update: data,
-  //       },
-  //       spaceOwner: {
-  //         update: data,
-  //       },
-  //     },
-  //     select: {
-  //       id: true,
-  //       role: true,
-  //       name: true,
-  //       accepted: true,
-  //       space: {},
-  //     },
-  //   });
-  // }
+  async updateSpace(
+    data: UpdateSpaceData,
+    id: number,
+    memberId: number,
+  ): Promise<ApplicationSpace | null> {
+    const space = await this.prisma.space.update({
+      where: {
+        id,
+      },
+      data,
+      select: {
+        ...selectSimpleSpace,
+        members: {
+          where: {
+            id: memberId,
+          },
+          select: {
+            accepted: true,
+            role: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return {
+      id: space.id,
+      name: space.name,
+      personal: space.personal,
+      accepted: space.members[0].accepted,
+      role: parseRole(space.members[0].role),
+      username: space.members[0].name,
+    };
+  }
 
   async addMemberToSpace({
     spaceId,
@@ -145,7 +172,7 @@ export class SpaceService {
     role,
     name,
   }: AddMember): Promise<ApplicationMember[]> {
-    const { owner, members } = await this.prisma.space.update({
+    const { members } = await this.prisma.space.update({
       where: {
         id: spaceId,
       },
@@ -164,81 +191,106 @@ export class SpaceService {
         },
       },
       select: {
-        owner: {
-          select: selectApplicationMember,
-        },
         members: {
           select: selectApplicationMember,
         },
       },
     });
-    return this.mergeMembers(members, owner);
+    return members.map(getApplicationMemberFromPrismaApplicationMember);
   }
 
   async deleteSpace(spaceId: number) {
-    const memberId = await this.prisma.member.findFirst({
+    const member = await this.prisma.member.findFirst({
       where: {
-        spaceOwner: {
-          id: spaceId,
-        },
+        spaceId,
       },
       select: {
         id: true,
+        role: true,
       },
     });
-    if (!memberId) {
+    if (!member || parseRole(member.role) !== RoleType.OWNER) {
       return;
     }
-    await this.prisma.member.delete({
+    await this.prisma.space.delete({
       where: {
-        id: memberId.id,
+        id: spaceId,
       },
     });
   }
 
-  async transferOwnership(
-    memberId: number,
-    ownerId: number,
-    spaceId: number,
-  ): Promise<ApplicationSpaceWithApplicationMembers> {
-    const data = await this.prisma.space.update({
+  async getDetailsSpaceById(spaceId: number): Promise<DetailSpace | null> {
+    const space = await this.prisma.space.findUnique({
       where: {
         id: spaceId,
       },
-      data: {
-        members: {
-          disconnect: {
-            id: memberId,
-          },
-          connect: {
-            id: ownerId,
-          },
-        },
-        owner: {
-          connect: {
-            id: memberId,
-          },
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-        personal: true,
-        members: { select: selectApplicationMember },
-        owner: { select: selectApplicationMember },
-      },
+      select: selectDetailSpace,
     });
-    const members = this.mergeMembers(data.members, data.owner);
-    const currentMember = members.find(({ id }) => id === ownerId);
+
+    if (!space) {
+      return null;
+    }
+
     return {
-      id: data.id,
-      name: data.name,
-      personal: data.personal,
-      role: currentMember?.role || RoleType.VIEW,
-      username: currentMember?.name || 'username',
-      accepted: currentMember?.accepted || false,
-      memberCount: members.length + 1,
-      members,
+      id: space.id,
+      name: space.name,
+      description: space.description,
+      personal: space.personal,
+      members: getApplicationMembersFromPrismaApplicationMembers(space.members),
     };
   }
+
+  // async transferOwnership(
+  //   memberId: number,
+  //   ownerId: number,
+  //   spaceId: number,
+  // ): Promise<ApplicationSpaceWithApplicationMembers> {
+  //   const data = await this.prisma.space.update({
+  //     where: {
+  //       id: spaceId,
+  //     },
+  //     data: {
+  //       members: {
+  //         update: [
+  //           {
+  //             where: {
+  //               id: memberId,
+  //             },
+  //             data: {
+  //               role: RoleType.OWNER,
+  //             },
+  //           },
+  //           {
+  //             where: {
+  //               id: ownerId,
+  //             },
+  //             data: {
+  //               role: RoleType.ADMIN,
+  //             },
+  //           },
+  //         ],
+  //       },
+  //     },
+  //     select: {
+  //       id: true,
+  //       name: true,
+  //       personal: true,
+  //       members: { select: selectApplicationMember },
+  //     },
+  //   });
+  //   const members = data.members.map(
+  //     getApplicationMemberFromPrismaApplicationMember,
+  //   );
+  //   const currentMember = members.find(({ id }) => id === ownerId);
+  //   return {
+  //     id: data.id,
+  //     name: data.name,
+  //     personal: data.personal,
+  //     role: currentMember?.role || RoleType.VIEW,
+  //     username: currentMember?.name || 'username',
+  //     accepted: currentMember?.accepted || false,
+  //     memberCount: members.length,
+  //     members,
+  //   };
+  // }
 }

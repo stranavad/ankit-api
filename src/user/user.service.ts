@@ -27,7 +27,7 @@ export class UserService {
       select: {
         members: {
           where: {
-            OR: [{ spaceId }, { spaceOwner: { id: spaceId } }],
+            spaceId,
           },
           select: {
             id: true,
