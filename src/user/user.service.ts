@@ -6,27 +6,19 @@ import {
   selectApplicationUser,
   selectSearchuser,
 } from './user.interface';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
   async searchUsers(
-    userId: number,
     search: string,
-    inSpaces: number[],
-    notInSpaces: number[],
+    notUserIds: number[],
   ): Promise<SearchUser[]> {
     return this.prisma.user.findMany({
       where: {
         AND: [
-          {
-            id: {
-              not: {
-                equals: userId,
-              },
-            },
-          },
           {
             OR: [
               {
@@ -40,6 +32,11 @@ export class UserService {
                 },
               },
             ],
+          },
+          {
+            id: {
+              notIn: notUserIds,
+            },
           },
         ],
       },

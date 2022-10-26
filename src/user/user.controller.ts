@@ -13,7 +13,7 @@ export class UserController {
   async searchUsers(@UserId() userId: number, @Body() body: SearchUsersDto) {
     // TODO add in and not in to userService
     return body.search.length > 2
-      ? this.userService.searchUsers(userId, body.search, body.in, body.notIn)
+      ? this.userService.searchUsers(body.search, [userId, ...body.notIn])
       : [];
   }
 }
