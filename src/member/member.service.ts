@@ -140,6 +140,20 @@ export class MemberService {
     }));
   }
 
+  async isUserInSpace(userId: number, spaceId: number): Promise<boolean> {
+    const member = await this.prisma.member.findUnique({
+      where: {
+        userId_spaceId: {
+          userId,
+          spaceId,
+        },
+      },
+      select: { id: true },
+    });
+    console.log(member);
+    return !!member;
+  }
+
   // async isMemberInSpace(memberId: number, spaceId: number): Promise<boolean> {
   //   const member = await this.prisma.member.findFirst({
   //     where: {

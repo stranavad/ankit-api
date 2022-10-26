@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Post,
@@ -13,6 +15,7 @@ import {
 import { AuthGuard } from '../auth.guard';
 import { MemberService } from '../member/member.service';
 import {
+  AddMemberToSpaceDto,
   CreateSpaceDto,
   GetUserSpaces,
   UpdateSpaceDto,
@@ -27,6 +30,7 @@ import { RoleType } from '../role';
 import { MemberId } from '../member.decorator';
 import { UserId } from '../user.decorator';
 import { SpaceId } from '../space.decorator';
+import { UserService } from '../user/user.service';
 
 @Controller('space')
 export class SpaceController {
@@ -34,6 +38,7 @@ export class SpaceController {
     private memberService: MemberService,
     private accountService: AccountService,
     private spaceService: SpaceService,
+    private userService: UserService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -107,44 +112,38 @@ export class SpaceController {
   //   return this.spaceService.getMembers(spaceId);
   // }
 
-  // @UseGuards(RolesGuard)
-  // @Roles(RoleType.ADMIN)
-  // @Post(':id/member')
-  // async addMemberToSpace(
-  //   @UserId() userId: number,
-  //   @Param('id', ParseIntPipe) spaceId: number,
-  //   @Body() body: AddMemberToSpaceDto,
-  // ) {
-  //   const user = await this.userService.findUserByEmail(body.email);
-  //   if (!user) {
-  //     throw new HttpException(
-  //       {
-  //         status: HttpStatus.BAD_REQUEST,
-  //         error: `User '${body.email}' does not exist`,
-  //       },
-  //       HttpStatus.BAD_REQUEST,
-  //     );
-  //   }
-  //   // Check if user is in group already
-  //   const inSpace = await this.userService.isUserInSpace(user.id, spaceId);
-  //
-  //   if (inSpace) {
-  //     throw new HttpException(
-  //       {
-  //         status: HttpStatus.BAD_REQUEST,
-  //         error: `User '${body.email}' is already in this space`,
-  //       },
-  //       HttpStatus.BAD_REQUEST,
-  //     );
-  //   }
-  //
-  //   return await this.spaceService.addMemberToSpace({
-  //     spaceId: spaceId,
-  //     userId: user.id,
-  //     role: body.role,
-  //     name: user.name,
-  //   });
-  // }
+  @UseGuards(RolesGuard)
+  @Roles(RoleType.ADMIN)
+  @Post(':id/member')
+  async addMemberToSpace(
+    @UserId() userId: number,
+    @SpaceId() spaceId: number,
+    @Body() body: AddMemberToSpaceDto,
+  ) {
+    // Check if user is in group already
+    const inSpace = await this.memberService.isUserInSpace(
+      body.userId,
+      spaceId,
+    );
+
+    if (inSpace) {
+      throw new HttpException(
+        {
+          status: HttpStatus.BAD_REQUEST,
+          error: 'This user is already in this space',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return await this.spaceService.addMemberToSpace({
+      spaceId: spaceId,
+      userId: body.userId,
+      role: body.role,
+      name: body.username,
+    });
+  }
+
   @UseGuards(RolesGuard)
   @Roles(RoleType.OWNER)
   @Delete(':id')

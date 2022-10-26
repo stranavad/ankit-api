@@ -14,6 +14,7 @@ async function bootstrap() {
   );
   await app.register(compression, { encodings: ['gzip', 'deflate'] });
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  app.enableCors();
   await app.listen(3001);
 }
 bootstrap().then(() => console.log('API Running'));

@@ -1,9 +1,74 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import {
+  ApplicationUser,
+  SearchUser,
+  selectApplicationUser,
+  selectSearchuser,
+} from './user.interface';
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
+
+  async searchUsers(
+    userId: number,
+    search: string,
+    inSpaces: number[],
+    notInSpaces: number[],
+  ): Promise<SearchUser[]> {
+    return this.prisma.user.findMany({
+      where: {
+        AND: [
+          {
+            id: {
+              not: {
+                equals: userId,
+              },
+            },
+          },
+          {
+            OR: [
+              {
+                email: {
+                  contains: search,
+                },
+              },
+              {
+                name: {
+                  contains: search,
+                },
+              },
+            ],
+          },
+        ],
+      },
+      select: selectSearchuser,
+    });
+  }
+
+  getUserByEmail(
+    email: string,
+    currentUserId: number,
+  ): Promise<ApplicationUser | null> {
+    return this.prisma.user.findFirst({
+      where: {
+        AND: [
+          {
+            email,
+          },
+          {
+            id: {
+              not: {
+                equals: currentUserId,
+              },
+            },
+          },
+        ],
+      },
+      select: selectApplicationUser,
+    });
+  }
 
   async findUserByEmail(
     email: string,

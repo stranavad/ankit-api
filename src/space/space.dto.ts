@@ -19,9 +19,13 @@ export class UpdateSpaceDto {
 }
 
 export class AddMemberToSpaceDto {
-  @IsEmail()
+  @IsNumber()
   @IsNotEmpty()
-  email: string;
+  userId: number;
+
+  @IsString()
+  @IsNotEmpty()
+  username: string;
 
   @IsString()
   role: RoleType = RoleType.VIEW;
