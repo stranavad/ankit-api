@@ -2,8 +2,7 @@ import { IsNotEmpty, IsString } from 'class-validator';
 
 export class SearchUsersDto {
   @IsString()
-  @IsNotEmpty()
-  search: string;
+  search = '';
 
   in: number[] = [];
   notIn: number[] = [];

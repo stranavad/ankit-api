@@ -7,7 +7,7 @@ export interface PrismaApplicationMember {
   name: string;
   role: string;
   accepted: boolean;
-  user: { id: number; email: string };
+  user: { id: number; email: string; image: string | null };
 }
 
 export const getApplicationMemberFromPrismaApplicationMember = (
@@ -19,6 +19,7 @@ export const getApplicationMemberFromPrismaApplicationMember = (
   accepted: member.accepted,
   email: member.user.email,
   userId: member.user.id,
+  image: member.user.image,
 });
 
 export const getApplicationMembersFromPrismaApplicationMembers = (
@@ -32,6 +33,7 @@ export interface ApplicationMember {
   role: RoleType;
   accepted: boolean;
   email: string;
+  image: string | null;
   userId: number;
 }
 
@@ -44,6 +46,7 @@ export const selectApplicationMember = Prisma.validator<Prisma.MemberSelect>()({
     select: {
       id: true,
       email: true,
+      image: true,
     },
   },
 });

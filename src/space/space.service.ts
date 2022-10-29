@@ -3,7 +3,10 @@ import { PrismaService } from '../prisma.service';
 import { parseRole, RoleType } from '../role';
 import {
   ApplicationSpace,
+  CurrentSpace,
   DetailSpace,
+  selectApplicationSpace,
+  selectApplicationSpaceWithDescription,
   selectDetailSpace,
   selectSimpleSpace,
   UpdateSpaceData,
@@ -127,7 +130,7 @@ export class SpaceService {
     });
 
     return space
-      ? space.members.map(getApplicationMemberFromPrismaApplicationMember)
+      ? getApplicationMembersFromPrismaApplicationMembers(space.members)
       : null;
   }
 
@@ -238,6 +241,34 @@ export class SpaceService {
       personal: space.personal,
       members: getApplicationMembersFromPrismaApplicationMembers(space.members),
     };
+  }
+
+  async getCurrentSpace(
+    spaceId: number,
+    memberId: number,
+  ): Promise<CurrentSpace | null> {
+    const member = await this.prisma.member.findUnique({
+      where: {
+        id: memberId,
+      },
+      select: {
+        ...selectApplicationMember,
+        space: {
+          select: selectApplicationSpaceWithDescription,
+        },
+      },
+    });
+    return member
+      ? {
+          member: getApplicationMemberFromPrismaApplicationMember(member),
+          space: {
+            ...member.space,
+            role: parseRole(member.role),
+            username: member.name,
+            accepted: member.accepted,
+          },
+        }
+      : null;
   }
 
   // async transferOwnership(

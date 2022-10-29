@@ -28,6 +28,23 @@ export interface ApplicationSpace
   accepted: boolean;
 }
 
+export interface ApplicationSpaceWithDescription extends ApplicationSpace {
+  description: string | null;
+}
+
+export const selectApplicationSpaceWithDescription =
+  Prisma.validator<Prisma.SpaceSelect>()({
+    id: true,
+    name: true,
+    personal: true,
+    description: true,
+  });
+
+export interface CurrentSpace {
+  space: ApplicationSpaceWithDescription;
+  member: ApplicationMember;
+}
+
 export interface UpdateSpaceData {
   name?: string;
   description?: string;

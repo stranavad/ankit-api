@@ -53,10 +53,10 @@ export class RolesGuard implements CanActivate {
     ) {
       throw new HttpException(
         {
-          status: HttpStatus.BAD_REQUEST,
+          status: HttpStatus.UNAUTHORIZED,
           error: `Doesn't belong to space`,
         },
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.UNAUTHORIZED,
       );
     }
 

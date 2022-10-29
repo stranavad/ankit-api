@@ -15,6 +15,7 @@ export class UserService {
   async searchUsers(
     search: string,
     notUserIds: number[],
+    notSpaceIds: number[],
   ): Promise<SearchUser[]> {
     return this.prisma.user.findMany({
       where: {
@@ -38,65 +39,90 @@ export class UserService {
               notIn: notUserIds,
             },
           },
+          {
+            members: {
+              none: {
+                spaceId: {
+                  in: notSpaceIds,
+                },
+              },
+            },
+          },
         ],
       },
       select: selectSearchuser,
     });
   }
 
-  getUserByEmail(
-    email: string,
-    currentUserId: number,
+  async getUserDetailsByMemberId(
+    memberId: number,
   ): Promise<ApplicationUser | null> {
-    return this.prisma.user.findFirst({
+    const member = await this.prisma.member.findUnique({
       where: {
-        AND: [
-          {
-            email,
-          },
-          {
-            id: {
-              not: {
-                equals: currentUserId,
-              },
-            },
-          },
-        ],
-      },
-      select: selectApplicationUser,
-    });
-  }
-
-  async findUserByEmail(
-    email: string,
-  ): Promise<{ id: number; name: string } | null> {
-    return await this.prisma.user.findUnique({
-      where: {
-        email,
+        id: memberId,
       },
       select: {
-        id: true,
-        name: true,
-      },
-    });
-  }
-
-  async isUserInSpace(userId: number, spaceId: number): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-      select: {
-        members: {
-          where: {
-            spaceId,
-          },
-          select: {
-            id: true,
-          },
+        user: {
+          select: selectApplicationUser,
         },
       },
     });
-    return !!user;
+    return member ? member.user : null;
   }
+  //
+  // getUserByEmail(
+  //   email: string,
+  //   currentUserId: number,
+  // ): Promise<ApplicationUser | null> {
+  //   return this.prisma.user.findFirst({
+  //     where: {
+  //       AND: [
+  //         {
+  //           email,
+  //         },
+  //         {
+  //           id: {
+  //             not: {
+  //               equals: currentUserId,
+  //             },
+  //           },
+  //         },
+  //       ],
+  //     },
+  //     select: selectApplicationUser,
+  //   });
+  // }
+
+  // async findUserByEmail(
+  //   email: string,
+  // ): Promise<{ id: number; name: string } | null> {
+  //   return await this.prisma.user.findUnique({
+  //     where: {
+  //       email,
+  //     },
+  //     select: {
+  //       id: true,
+  //       name: true,
+  //     },
+  //   });
+  // }
+  //
+  // async isUserInSpace(userId: number, spaceId: number): Promise<boolean> {
+  //   const user = await this.prisma.user.findUnique({
+  //     where: {
+  //       id: userId,
+  //     },
+  //     select: {
+  //       members: {
+  //         where: {
+  //           spaceId,
+  //         },
+  //         select: {
+  //           id: true,
+  //         },
+  //       },
+  //     },
+  //   });
+  //   return !!user;
+  // }
 }

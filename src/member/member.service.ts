@@ -3,6 +3,8 @@ import { PrismaService } from '../prisma.service';
 import { ApplicationSpace, selectSimpleSpace } from '../space/space.interface';
 import {
   AllMembersWithSpaces,
+  ApplicationMember,
+  getApplicationMemberFromPrismaApplicationMember,
   selectApplicationMember,
 } from './member.interface';
 import { parseRole, RoleType } from '../role';
@@ -11,6 +13,18 @@ import { Prisma } from '@prisma/client';
 @Injectable()
 export class MemberService {
   constructor(private prisma: PrismaService) {}
+
+  async getMemberById(id: number): Promise<ApplicationMember | null> {
+    const member = await this.prisma.member.findUnique({
+      where: {
+        id,
+      },
+      select: selectApplicationMember,
+    });
+    return member
+      ? getApplicationMemberFromPrismaApplicationMember(member)
+      : null;
+  }
 
   async createDefaultMember(userId: number) {
     // TODO check if we can move to one simple query without multiple select
@@ -154,6 +168,23 @@ export class MemberService {
     return !!member;
   }
 
+  async deleteMember(memberId: number, userId: number) {
+    return await this.prisma.member.deleteMany({
+      where: {
+        AND: [
+          {
+            id: memberId,
+          },
+          {
+            userId: {
+              not: userId,
+            },
+          },
+        ],
+      },
+    });
+  }
+
   // async isMemberInSpace(memberId: number, spaceId: number): Promise<boolean> {
   //   const member = await this.prisma.member.findFirst({
   //     where: {
@@ -176,29 +207,22 @@ export class MemberService {
   //   return member ? parseRole(member.role) : null;
   // }
   //
-  // async deleteMember(memberId: number) {
-  //   return await this.prisma.member.delete({
-  //     where: {
-  //       id: memberId,
-  //     },
-  //   });
-  // }
   //
-  // async updateRole(
-  //   memberId: number,
-  //   role: RoleType,
-  // ): Promise<ApplicationMember | null> {
-  //   const member = await this.prisma.member.update({
-  //     where: {
-  //       id: memberId,
-  //     },
-  //     data: {
-  //       role: role,
-  //     },
-  //     select: selectApplicationMember,
-  //   });
-  //   return member
-  //     ? getApplicationMemberFromPrismaApplicationMember(member)
-  //     : null;
-  // }
+  async updateRole(
+    memberId: number,
+    role: RoleType,
+  ): Promise<ApplicationMember | null> {
+    const member = await this.prisma.member.update({
+      where: {
+        id: memberId,
+      },
+      data: {
+        role: role,
+      },
+      select: selectApplicationMember,
+    });
+    return member
+      ? getApplicationMemberFromPrismaApplicationMember(member)
+      : null;
+  }
 }

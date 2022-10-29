@@ -6,6 +6,7 @@ import {
   HttpException,
   HttpStatus,
   Param,
+  Headers,
   ParseIntPipe,
   Post,
   Put,
@@ -32,7 +33,7 @@ import { UserId } from '../user.decorator';
 import { SpaceId } from '../space.decorator';
 import { UserService } from '../user/user.service';
 
-@Controller('space')
+@Controller('spaces')
 export class SpaceController {
   constructor(
     private memberService: MemberService,
@@ -105,12 +106,22 @@ export class SpaceController {
     return this.spaceService.getDetailsSpaceById(spaceId);
   }
 
-  // @UseGuards(AuthGuard)
-  // @Get(':id/member')
-  // async getSpaceMembers(@Param('id', ParseIntPipe) spaceId: number) {
-  //   // TODO add check if user in in space - one query possible
-  //   return this.spaceService.getMembers(spaceId);
-  // }
+  @UseGuards(RolesGuard)
+  @Roles(RoleType.VIEW)
+  @Get(':id/current')
+  getCurrentSpaceDetails(
+    @SpaceId() spaceId: number,
+    @MemberId() memberId: number,
+  ) {
+    return this.spaceService.getCurrentSpace(spaceId, memberId);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(RoleType.VIEW)
+  @Get(':id/member')
+  async getSpaceMembers(@Param('id', ParseIntPipe) spaceId: number) {
+    return this.spaceService.getMembers(spaceId);
+  }
 
   @UseGuards(RolesGuard)
   @Roles(RoleType.ADMIN)
@@ -181,40 +192,15 @@ export class SpaceController {
   //   return this.spaceService.transferOwnership(memberId, ownerId, spaceId);
   // }
 
-  // @UseGuards(RolesGuard)
-  // @Roles('admin')
-  // @Delete(':id/member/:memberId')
-  // async removeMemberFromSpace(
-  //   @AccountId() accountId: string,
-  //   @Param('id') spaceId: number,
-  //   @Param('memberId', ParseIntPipe) memberId: number,
-  //   @Role() role: RoleType,
-  // ) {
-  //   const memberRole = await this.memberService.getMemberRole(memberId);
-  //   if (!memberRole) {
-  //     throw new HttpException(
-  //       {
-  //         status: HttpStatus.BAD_REQUEST,
-  //         error: `Member '${memberId}' does not exist`,
-  //       },
-  //       HttpStatus.BAD_REQUEST,
-  //     );
-  //   }
-  //   if (
-  //     [RoleType.VIEW, RoleType.EDIT].includes(memberRole) ||
-  //     role === RoleType.OWNER
-  //   ) {
-  //     await this.memberService.deleteMember(memberId);
-  //   } else {
-  //     throw new HttpException(
-  //       {
-  //         status: HttpStatus.FORBIDDEN,
-  //         error: `You do not have enough permissions`,
-  //       },
-  //       HttpStatus.FORBIDDEN,
-  //     );
-  //   }
-  //   // check role hierarchy
-  //   return 'Successfully deleted';
-  // }
+  @UseGuards(RolesGuard)
+  @Roles(RoleType.OWNER)
+  @Delete(':id/member/:memberId')
+  async removeMemberFromSpace(
+    @SpaceId() spaceId: number,
+    @UserId() userId: number,
+    @Param('memberId', ParseIntPipe) memberId: number,
+  ) {
+    await this.memberService.deleteMember(memberId, userId);
+    return this.spaceService.getMembers(spaceId);
+  }
 }
