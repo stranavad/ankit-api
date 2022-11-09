@@ -11,11 +11,14 @@ async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter(),
-    { cors: true },
   );
   await app.register(compression, { encodings: ['gzip', 'deflate'] });
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
-  // app.enableCors();
+  app.enableCors({
+    origin: '*',
+    methods: 'GET, PUT, POST, DELETE, OPTIONS',
+    allowedHeaders: 'Content-Type, Authorization, UserID',
+  });
   await app.listen(3001);
 }
 bootstrap().then(() => console.log('API Running'));
