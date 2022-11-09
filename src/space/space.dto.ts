@@ -1,4 +1,10 @@
-import { IsEmail, IsNotEmpty, IsString, IsNumber } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  IsNumber,
+  IsBoolean,
+} from 'class-validator';
 import { RoleType } from '../role';
 
 export class CreateSpaceDto {
@@ -38,7 +44,7 @@ export class TransferOwnership {
 }
 
 export class GetUserSpaces {
-  accepted: boolean | null = null;
+  accepted = 'true';
   search: string | null = null;
 }
 

@@ -1,4 +1,4 @@
-import { IsNotEmpty } from 'class-validator';
+import { IsBoolean, IsNotEmpty } from 'class-validator';
 import { RoleType } from '../role';
 
 export class UpdateMemberDto {
@@ -8,4 +8,9 @@ export class UpdateMemberDto {
 export class UpdateRoleDto {
   @IsNotEmpty()
   role: RoleType;
+}
+
+export class AcceptSpaceInvitationDto {
+  @IsBoolean()
+  accept: boolean;
 }

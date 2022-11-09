@@ -2,9 +2,15 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator js {
+  provider        = "prisma-client-js"
+  previewFeatures = ["referentialIntegrity"]
+}
+
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider             = "mysql"
+  url                  = env("DATABASE_URL")
+  relationMode = "prisma"
 }
 
 model Session {
@@ -69,6 +75,7 @@ model Member {
 
   @@unique([userId, spaceId])
   @@index([spaceId], map: "Member_spaceId_fkey")
+  @@index([userId])
 }
 
 model Space {

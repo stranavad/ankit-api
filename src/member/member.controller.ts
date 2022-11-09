@@ -1,6 +1,8 @@
 import {
   Body,
   Controller,
+  HttpException,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Post,
@@ -12,7 +14,7 @@ import { RolesGuard } from '../roles.guard';
 import { Roles } from '../roles.decorator';
 import { RoleType } from '../role';
 import { ApplicationMember } from './member.interface';
-import { UpdateRoleDto } from './member.dto';
+import { AcceptSpaceInvitationDto, UpdateRoleDto } from './member.dto';
 import { MemberId } from '../member.decorator';
 import { Role } from '../role.decorator';
 

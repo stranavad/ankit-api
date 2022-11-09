@@ -87,10 +87,10 @@ export class MemberService {
 
   async getAllMembersWithSpaces(
     userId: number,
-    filter: { accepted?: boolean | null; search?: string | null },
+    filter: { accepted?: boolean; search?: string | null },
   ): Promise<ApplicationSpace[] | null> {
     let memberWhere = Prisma.validator<Prisma.MemberWhereInput>()({});
-    if (filter.accepted && filter.search) {
+    if ((filter.accepted || filter.accepted === false) && filter.search) {
       memberWhere = {
         AND: [
           {
@@ -105,7 +105,7 @@ export class MemberService {
           },
         ],
       };
-    } else if (filter.accepted) {
+    } else if (filter.accepted || filter.accepted === false) {
       memberWhere = {
         accepted: filter.accepted,
       };
@@ -181,6 +181,28 @@ export class MemberService {
             },
           },
         ],
+      },
+    });
+  }
+
+  async acceptInvitation(memberId: number): Promise<ApplicationMember | null> {
+    const member = await this.prisma.member.update({
+      where: {
+        id: memberId,
+      },
+      data: {
+        accepted: true,
+      },
+      select: selectApplicationMember,
+    });
+    return getApplicationMemberFromPrismaApplicationMember(member);
+  }
+
+  leaveSpace(memberId: number) {
+    // Member can't be owner
+    return this.prisma.member.delete({
+      where: {
+        id: memberId,
       },
     });
   }

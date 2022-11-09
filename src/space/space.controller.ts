@@ -32,6 +32,8 @@ import { MemberId } from '../member.decorator';
 import { UserId } from '../user.decorator';
 import { SpaceId } from '../space.decorator';
 import { UserService } from '../user/user.service';
+import { AcceptSpaceInvitationDto } from '../member/member.dto';
+import { Role } from '../role.decorator';
 
 @Controller('spaces')
 export class SpaceController {
@@ -48,11 +50,36 @@ export class SpaceController {
     @UserId() userId: number,
     @Query() query: GetUserSpaces,
   ): Promise<ApplicationSpace[] | null> {
+    console.log(query);
     const filter = {
-      accepted: query.accepted,
+      accepted: query.accepted === 'true',
       search: query.search,
     };
     return await this.memberService.getAllMembersWithSpaces(userId, filter);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(RoleType.VIEW)
+  @Post(':id/accept')
+  async acceptSpaceInvitation(
+    @MemberId() memberId: number,
+    @Body() acceptSpaceInvitation: AcceptSpaceInvitationDto,
+    @Role() role: RoleType,
+  ) {
+    if (acceptSpaceInvitation.accept) {
+      return this.memberService.acceptInvitation(memberId);
+    }
+    if (role === RoleType.OWNER) {
+      throw new HttpException(
+        {
+          status: HttpStatus.BAD_REQUEST,
+          error: 'You cannot leave space as owner',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+      return;
+    }
+    return this.memberService.leaveSpace(memberId);
   }
 
   @UseGuards(AuthGuard)
