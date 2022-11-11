@@ -5,6 +5,17 @@ export enum Structure {
   INDIVIDUAL = 'individual',
 }
 
+export const parseStructure = (structure: string): Structure => {
+  switch (structure) {
+    case Structure.LIST:
+      return Structure.LIST;
+    case Structure.INDIVIDUAL:
+      return Structure.INDIVIDUAL;
+    default:
+      return Structure.LIST;
+  }
+};
+
 export enum Status {
   ACTIVE = 'active',
   PAUSED = 'paused',
@@ -55,3 +66,57 @@ export const getApplicationQuestionnairesFromPrisma = (
   questionnaires: PrismaApplicationQuestionnaire[],
 ): ApplicationQuestionnaire[] =>
   questionnaires.map(getApplicationQuestionnaireFromPrisma);
+
+/* DETAIL QUESTIONNAIRE */
+export interface DetailQuestionnaire extends ApplicationQuestionnaire {
+  description: string | null;
+  category: number;
+  timeLimit: number | null;
+  allowReturn: boolean;
+  structure: Structure;
+  passwordProtected: boolean;
+}
+export interface PrismaDetailQuestionnaire
+  extends PrismaApplicationQuestionnaire {
+  description: string | null;
+  category: number;
+  timeLimit: number | null;
+  allowReturn: boolean;
+  structure: string;
+  passwordProtected: boolean;
+}
+
+export const selectDetailQuestionnaire =
+  Prisma.validator<Prisma.QuestionnaireSelect>()({
+    id: true,
+    name: true,
+    url: true,
+    status: true,
+    space: {
+      select: {
+        id: true,
+      },
+    },
+    description: true,
+    category: true,
+    timeLimit: true,
+    allowReturn: true,
+    structure: true,
+    passwordProtected: true,
+  });
+
+export const getDetailQuestionnaireFromPrisma = (
+  data: PrismaDetailQuestionnaire,
+): DetailQuestionnaire => ({
+  id: data.id,
+  name: data.name,
+  url: data.url,
+  status: data.status,
+  spaceId: data.space.id,
+  description: data.description,
+  category: data.category,
+  timeLimit: data.timeLimit,
+  allowReturn: data.allowReturn,
+  structure: parseStructure(data.structure),
+  passwordProtected: data.passwordProtected,
+});

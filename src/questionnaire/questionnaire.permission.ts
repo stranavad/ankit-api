@@ -11,7 +11,7 @@ export const enum UpdateQuestionnairePermission {
   PASSWORD = 'password',
 }
 
-const updateQuestionnairePermissions: {
+export const updateQuestionnairePermissions: {
   [key in UpdateQuestionnairePermission]: RoleType;
 } = {
   name: RoleType.EDIT,

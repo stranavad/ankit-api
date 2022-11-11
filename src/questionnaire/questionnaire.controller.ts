@@ -17,6 +17,8 @@ import {
 import { QuestionnaireService } from './questionnaire.service';
 import { SpaceId } from '../space.decorator';
 import { QuestionnaireId } from '../questionnaire.decorator';
+import { Role } from '../role.decorator';
+import { DetailQuestionnaire } from './questionnaire.interface';
 
 @Controller('questionnaire')
 export class GeneralQuestionnaireController {
@@ -35,7 +37,9 @@ export class GeneralQuestionnaireController {
   @Post()
   @UseGuards(RolesGuard)
   @Roles(RoleType.ADMIN)
-  createQuestionnaire(@Body() data: CreateQuestionnaireDto) {
+  createQuestionnaire(
+    @Body() data: CreateQuestionnaireDto,
+  ): Promise<DetailQuestionnaire> {
     return this.questionnaireService.createQuestionnaire({
       name: data.name,
       spaceId: data.spaceId,
@@ -53,7 +57,12 @@ export class QuestionnaireController {
   updateQuestionnaire(
     @QuestionnaireId() questionnaireId: number,
     @Body() data: UpdateQuestionnaireDto,
+    @Role() role: RoleType,
   ) {
-    return null;
+    return this.questionnaireService.updateQuestionnaire(
+      data,
+      role,
+      questionnaireId,
+    );
   }
 }
