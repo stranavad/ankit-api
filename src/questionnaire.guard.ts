@@ -41,7 +41,7 @@ export class RolesGuard implements CanActivate {
     if (!token || !userId || !questionnaireId || !memberId) {
       return false;
     }
-
+    f;
     const memberAuth =
       await this.accountService.getMemberDetailsByAccessTokenQuestionnaire(
         userId,
