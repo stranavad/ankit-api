@@ -20,7 +20,7 @@ import { QuestionnaireId } from '../questionnaire.decorator';
 import { Role } from '../role.decorator';
 import { DetailQuestionnaire } from './questionnaire.interface';
 
-@Controller('questionnaire')
+@Controller('questionnaire/space/:id')
 export class GeneralQuestionnaireController {
   constructor(private questionnaireService: QuestionnaireService) {}
 
