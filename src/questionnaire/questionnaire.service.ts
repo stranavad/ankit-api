@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import {
   ApplicationQuestionnaire,
+  CurrentQuestionnaire,
   DetailQuestionnaire,
   getApplicationQuestionnairesFromPrisma,
   getDetailQuestionnaireFromPrisma,
@@ -11,12 +12,20 @@ import {
   Structure,
 } from './questionnaire.interface';
 import { UpdateQuestionnaireDto } from './questionnaire.dto';
-import { RoleType } from '../role';
+import { parseRole, RoleType } from '../role';
 import {
   UpdateQuestionnairePermission,
   updateQuestionnairePermissions,
 } from './questionnaire.permission';
 import { AuthService } from '../auth/auth.service';
+import {
+  ApplicationMember,
+  selectApplicationMember,
+} from '../member/member.interface';
+import {
+  ApplicationSpace,
+  selectApplicationSpace,
+} from '../space/space.interface';
 
 @Injectable()
 export class QuestionnaireService {
@@ -24,6 +33,83 @@ export class QuestionnaireService {
     private prisma: PrismaService,
     private authService: AuthService,
   ) {}
+
+  async getQuestionnaire(id: number): Promise<DetailQuestionnaire | null> {
+    const questionnaire = await this.prisma.questionnaire.findUnique({
+      where: {
+        id,
+      },
+      select: selectDetailQuestionnaire,
+    });
+    return questionnaire
+      ? getDetailQuestionnaireFromPrisma(questionnaire)
+      : null;
+  }
+
+  async getCurrentInformation(
+    questionnaireId: number,
+    spaceId: number,
+    userId: number,
+  ): Promise<CurrentQuestionnaire | null> {
+    const space = await this.prisma.space.findUnique({
+      where: {
+        id: spaceId,
+      },
+      select: {
+        ...selectApplicationSpace,
+        questionnaires: {
+          where: {
+            id: questionnaireId,
+          },
+          select: selectApplicationQuestionnaire,
+        },
+        members: {
+          where: {
+            userId,
+          },
+          select: selectApplicationMember,
+        },
+      },
+    });
+    if (!space) {
+      return null;
+    }
+
+    const member = space.members[0];
+    const questionnaire = space.questionnaires[0];
+
+    const dataSpace: ApplicationSpace = {
+      id: space.id,
+      name: space.name,
+      personal: space.personal,
+      role: parseRole(member.role),
+      username: member.name,
+      accepted: member.accepted,
+    };
+
+    const dataMember: ApplicationMember = {
+      id: member.id,
+      name: member.name,
+      role: parseRole(member.role),
+      accepted: member.accepted,
+      email: member.user.email,
+      image: member.user.image,
+      userId: member.user.id,
+    };
+
+    const dataQuestionnaire: ApplicationQuestionnaire = {
+      id: questionnaire.id,
+      name: questionnaire.name,
+      url: questionnaire.url,
+      status: questionnaire.status,
+      spaceId: space.id,
+    };
+    return {
+      space: dataSpace,
+      member: dataMember,
+      questionnaire: dataQuestionnaire,
+    };
+  }
 
   async getQuestionnaires(
     spaceId: number,

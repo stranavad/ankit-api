@@ -2,7 +2,6 @@ import {
   CanActivate,
   ExecutionContext,
   HttpException,
-  HttpStatus,
   Inject,
   Injectable,
 } from '@nestjs/common';
@@ -12,7 +11,7 @@ import { RoleType } from './role';
 import { AccountService } from './account/account.service';
 
 @Injectable()
-export class RolesGuard implements CanActivate {
+export class QuestionnaireGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
     @Inject(AuthService) private authService: AuthService,
@@ -34,19 +33,16 @@ export class RolesGuard implements CanActivate {
     );
 
     const userId = Number(request.headers.userid) || null;
-    const memberId = Number(request.headers.memberid) || null;
     const questionnaireId = Number(request.params.id) || null;
 
-    // TODO check for NaN
-    if (!token || !userId || !questionnaireId || !memberId) {
+    if (!token || !userId || !questionnaireId) {
       return false;
     }
-    f;
+
     const memberAuth =
       await this.accountService.getMemberDetailsByAccessTokenQuestionnaire(
         userId,
         token,
-        memberId,
         questionnaireId,
       );
 
@@ -56,10 +52,10 @@ export class RolesGuard implements CanActivate {
     ) {
       throw new HttpException(
         {
-          status: HttpStatus.UNAUTHORIZED,
-          error: `Doesn't belong to space`,
+          status: 405,
+          error: `Questionnaire doesn't exist or you don't have access to it`,
         },
-        HttpStatus.UNAUTHORIZED,
+        405,
       );
     }
 

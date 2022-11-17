@@ -18,7 +18,12 @@ import { QuestionnaireService } from './questionnaire.service';
 import { SpaceId } from '../space.decorator';
 import { QuestionnaireId } from '../questionnaire.decorator';
 import { Role } from '../role.decorator';
-import { DetailQuestionnaire } from './questionnaire.interface';
+import {
+  CurrentQuestionnaire,
+  DetailQuestionnaire,
+} from './questionnaire.interface';
+import { QuestionnaireGuard } from '../questionnaire.guard';
+import { UserId } from '../user.decorator';
 
 @Controller('questionnaire/space/:id')
 export class GeneralQuestionnaireController {
@@ -39,10 +44,11 @@ export class GeneralQuestionnaireController {
   @Roles(RoleType.ADMIN)
   createQuestionnaire(
     @Body() data: CreateQuestionnaireDto,
+    @SpaceId() spaceId: number,
   ): Promise<DetailQuestionnaire> {
     return this.questionnaireService.createQuestionnaire({
       name: data.name,
-      spaceId: data.spaceId,
+      spaceId: spaceId,
     });
   }
 }
@@ -51,8 +57,17 @@ export class GeneralQuestionnaireController {
 export class QuestionnaireController {
   constructor(private questionnaireService: QuestionnaireService) {}
 
+  @Get()
+  @UseGuards(QuestionnaireGuard)
+  @Roles(RoleType.VIEW)
+  getQuestionnaire(
+    @QuestionnaireId() questionnaireId: number,
+  ): Promise<DetailQuestionnaire | null> {
+    return this.questionnaireService.getQuestionnaire(questionnaireId);
+  }
+
   @Put()
-  @UseGuards(RolesGuard)
+  @UseGuards(QuestionnaireGuard)
   @Roles(RoleType.EDIT)
   updateQuestionnaire(
     @QuestionnaireId() questionnaireId: number,
@@ -63,6 +78,21 @@ export class QuestionnaireController {
       data,
       role,
       questionnaireId,
+    );
+  }
+
+  @Get('current')
+  @UseGuards(QuestionnaireGuard)
+  @Roles(RoleType.VIEW)
+  getCurrentInformation(
+    @QuestionnaireId() questionnaireId: number,
+    @SpaceId() spaceId: number,
+    @UserId() userId: number,
+  ): Promise<CurrentQuestionnaire | null> {
+    return this.questionnaireService.getCurrentInformation(
+      questionnaireId,
+      spaceId,
+      userId,
     );
   }
 }

@@ -1,4 +1,6 @@
 import { Prisma } from '@prisma/client';
+import { ApplicationSpace } from '../space/space.interface';
+import { ApplicationMember } from '../member/member.interface';
 
 export enum Structure {
   LIST = 'list',
@@ -75,6 +77,7 @@ export interface DetailQuestionnaire extends ApplicationQuestionnaire {
   allowReturn: boolean;
   structure: Structure;
   passwordProtected: boolean;
+  password: string | null;
 }
 export interface PrismaDetailQuestionnaire
   extends PrismaApplicationQuestionnaire {
@@ -84,6 +87,7 @@ export interface PrismaDetailQuestionnaire
   allowReturn: boolean;
   structure: string;
   passwordProtected: boolean;
+  password: string | null;
 }
 
 export const selectDetailQuestionnaire =
@@ -103,6 +107,7 @@ export const selectDetailQuestionnaire =
     allowReturn: true,
     structure: true,
     passwordProtected: true,
+    password: true,
   });
 
 export const getDetailQuestionnaireFromPrisma = (
@@ -119,4 +124,11 @@ export const getDetailQuestionnaireFromPrisma = (
   allowReturn: data.allowReturn,
   structure: parseStructure(data.structure),
   passwordProtected: data.passwordProtected,
+  password: data.password,
 });
+
+export interface CurrentQuestionnaire {
+  space: ApplicationSpace;
+  member: ApplicationMember;
+  questionnaire: ApplicationQuestionnaire;
+}

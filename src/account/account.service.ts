@@ -45,35 +45,34 @@ export class AccountService {
   async getMemberDetailsByAccessTokenQuestionnaire(
     userId: number,
     token: string,
-    memberId: number,
     questionnaireId: number,
   ): Promise<QuestionnaireAuth | null> {
-    const accounts = await this.prisma.account.findMany({
+    const questionnaire = await this.prisma.questionnaire.findUnique({
       where: {
-        userId,
+        id: questionnaireId,
       },
       select: {
-        access_token: true,
-        expires_at: true,
-        user: {
+        id: true,
+        space: {
           select: {
             id: true,
             members: {
               where: {
-                id: memberId,
+                userId: userId,
               },
               select: {
                 id: true,
                 role: true,
-                space: {
+                user: {
                   select: {
                     id: true,
-                    questionnaires: {
+                    accounts: {
                       where: {
-                        id: questionnaireId,
+                        access_token: token,
                       },
                       select: {
-                        id: true,
+                        access_token: true,
+                        expires_at: true,
                       },
                     },
                   },
@@ -85,21 +84,25 @@ export class AccountService {
       },
     });
 
-    const account =
-      accounts.find((account) => account.access_token === token) || null;
-
-    if (!account || !account.user.members[0]?.space?.questionnaires[0]?.id) {
+    if (
+      !questionnaire ||
+      !questionnaire.space.members[0].user.accounts.length
+    ) {
       return null;
     }
+
+    const member = questionnaire.space.members[0];
+    const user = questionnaire.space.members[0].user;
+    const account = questionnaire.space.members[0].user.accounts[0];
 
     return {
       accessToken: account.access_token,
       expiresAt: account.expires_at,
-      memberId: account.user.members[0].id,
-      role: parseRole(account.user.members[0].role),
-      userId: account.user.id,
-      spaceId: account.user.members[0].space.id,
-      questionnaireId: account.user.members[0].space.questionnaires[0].id,
+      memberId: member.id,
+      role: parseRole(member.role),
+      userId: user.id,
+      spaceId: questionnaire.space.id,
+      questionnaireId: questionnaire.id,
     };
   }
 
