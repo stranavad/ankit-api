@@ -11,6 +11,7 @@ import { RolesGuard } from '../roles.guard';
 import { Roles } from '../roles.decorator';
 import { RoleType } from '../role';
 import {
+  CreateQuestionDto,
   CreateQuestionnaireDto,
   UpdateQuestionnaireDto,
 } from './questionnaire.dto';
@@ -21,6 +22,7 @@ import { Role } from '../role.decorator';
 import {
   CurrentQuestionnaire,
   DetailQuestionnaire,
+  Question,
 } from './questionnaire.interface';
 import { QuestionnaireGuard } from '../questionnaire.guard';
 import { UserId } from '../user.decorator';
@@ -94,5 +96,24 @@ export class QuestionnaireController {
       spaceId,
       userId,
     );
+  }
+
+  @Get('questions')
+  @UseGuards(QuestionnaireGuard)
+  @Roles(RoleType.VIEW)
+  getQuestions(
+    @QuestionnaireId() questionnaireId: number,
+  ): Promise<Question[]> {
+    return this.questionnaireService.loadQuestions(questionnaireId);
+  }
+
+  @Post('questions')
+  @UseGuards(QuestionnaireGuard)
+  @Roles(RoleType.ADMIN)
+  createQuestion(
+    @QuestionnaireId() questionnaireId: number,
+    @Body() body: CreateQuestionDto,
+  ) {
+    return this.questionnaireService.createQuestion(questionnaireId, body.type);
   }
 }

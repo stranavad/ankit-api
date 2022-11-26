@@ -121,6 +121,7 @@ model Question {
   updated         DateTime      @default(now())
   questionnaireId Int
   questionnaire   Questionnaire @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
+  options         Option[]
 
   @@unique([questionnaireId, position])
 }
@@ -132,6 +133,7 @@ model Option {
   updated    DateTime @default(now())
   position   Float    @default(0)
   questionId Int
+  question  Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   @@unique([questionId, position])
 }

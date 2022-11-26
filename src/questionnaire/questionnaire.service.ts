@@ -6,8 +6,13 @@ import {
   DetailQuestionnaire,
   getApplicationQuestionnairesFromPrisma,
   getDetailQuestionnaireFromPrisma,
+  getQuestionFromPrisma,
+  getQuestionsFromPrisma,
+  Question,
+  QuestionType,
   selectApplicationQuestionnaire,
   selectDetailQuestionnaire,
+  selectQuestion,
   Status,
   Structure,
 } from './questionnaire.interface';
@@ -156,6 +161,9 @@ export class QuestionnaireService {
             id: spaceId,
           },
         },
+        questions: {
+          create: {},
+        },
       },
       select: selectDetailQuestionnaire,
     });
@@ -179,6 +187,61 @@ export class QuestionnaireService {
       return;
     }
     callback(value);
+  }
+
+  async loadQuestions(questionnaireId: number): Promise<Question[]> {
+    const data = await this.prisma.question.findMany({
+      where: {
+        questionnaireId,
+      },
+      select: selectQuestion,
+    });
+    return getQuestionsFromPrisma(data);
+  }
+
+  async createQuestion(
+    questionnaireId: number,
+    type: QuestionType,
+  ): Promise<Question> {
+    // First we need to get all positions
+    const questions = await this.prisma.question.findMany({
+      where: {
+        questionnaireId,
+      },
+      select: {
+        position: true,
+      },
+      orderBy: {
+        position: 'asc',
+      },
+    });
+
+    console.log(questions);
+
+    const position =
+      questions.map(({ position }) => position)[questions.length - 1] + 10;
+
+    console.log(position);
+
+    const question = await this.prisma.question.create({
+      data: {
+        questionnaire: {
+          connect: {
+            id: questionnaireId,
+          },
+        },
+        position,
+        type,
+        options: {
+          create: {
+            position: 0,
+          },
+        },
+      },
+      select: selectQuestion,
+    });
+
+    return getQuestionFromPrisma(question);
   }
 
   async updateQuestionnaire(
