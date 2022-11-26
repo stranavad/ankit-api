@@ -8,8 +8,8 @@ generator js {
 }
 
 datasource db {
-  provider             = "mysql"
-  url                  = env("DATABASE_URL")
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
   relationMode = "prisma"
 }
 
@@ -29,9 +29,9 @@ model User {
   email         String    @unique
   emailVerified DateTime?
   image         String?
+  sessions      Session[]
   accounts      Account[]
   members       Member[]
-  sessions      Session[]
 }
 
 model VerificationToken {
@@ -79,48 +79,59 @@ model Member {
 }
 
 model Space {
-  id          Int      @id @default(autoincrement())
-  name        String   @default("New Space")
-  description String?
-  personal    Boolean  @default(false)
-  created     DateTime @default(now())
-  updated     DateTime @default(now())
-  members     Member[]
-  questionnaires  Questionnaire[]
+  id             Int             @id @default(autoincrement())
+  name           String          @default("New Space")
+  description    String?
+  personal       Boolean         @default(false)
+  created        DateTime        @default(now())
+  updated        DateTime        @default(now())
+  members        Member[]
+  questionnaires Questionnaire[]
 }
 
 model Questionnaire {
-  id          Int       @id @default(autoincrement())
-  name        String    @default("New Questionnaire")
-  description String?   @db.Text
-  category    Int       @default(1)
-  url         String?
-  status      String    @default("paused")
-  timeLimit   Int?
-  allowReturn Boolean   @default(true)
-  structure   String    @default("list")
-  passwordProtected Boolean @default(false)
-  password    String?
-  spaceId     Int
-  space       Space     @relation(fields: [spaceId], references: [id], onDelete: Cascade)
-  created     DateTime @default(now())
-  updated     DateTime @default(now())
-  questions   Question[]
+  id                Int        @id @default(autoincrement())
+  name              String     @default("New Questionnaire")
+  description       String?    @db.Text
+  category          Int        @default(1)
+  url               String?
+  status            String     @default("paused")
+  timeLimit         Int?
+  allowReturn       Boolean    @default(true)
+  structure         String     @default("list")
+  passwordProtected Boolean    @default(false)
+  password          String?
+  spaceId           Int
+  created           DateTime   @default(now())
+  updated           DateTime   @default(now())
+  space             Space      @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  questions         Question[]
 }
 
 model Question {
-  id          Int       @id @default(autoincrement())
-  title       String    @default("New question")
-  description String? @db.Text
-  visible     Boolean   @default(true)
-  required    Boolean   @default(false)
-  timeLimit   Int?
-  position    Float     @default(0)
-  type        String    @default("text")
-  created     DateTime @default(now())
-  updated     DateTime @default(now())
+  id              Int           @id @default(autoincrement())
+  title           String        @default("New question")
+  description     String?       @db.Text
+  visible         Boolean       @default(true)
+  required        Boolean       @default(false)
+  timeLimit       Int?
+  position        Float         @default(0)
+  type            String        @default("text")
+  created         DateTime      @default(now())
+  updated         DateTime      @default(now())
   questionnaireId Int
-  questionnaire Questionnaire @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
+  questionnaire   Questionnaire @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
 
   @@unique([questionnaireId, position])
+}
+
+model Option {
+  id         Int      @id @default(autoincrement())
+  value      String   @default("New Option")
+  created    DateTime @default(now())
+  updated    DateTime @default(now())
+  position   Float    @default(0)
+  questionId Int
+
+  @@unique([questionId, position])
 }
