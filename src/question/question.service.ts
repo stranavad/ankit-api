@@ -7,11 +7,14 @@ import {
 } from './question.interface';
 import { PrismaService } from '../prisma.service';
 import {
+  AddOptionDto,
   CreateQuestionDto,
   UpdateQuestionDto,
   UpdateQuestionTypeDto,
 } from './question.dto';
 import { QuestionType } from '../questionnaire/questionnaire.interface';
+
+const positionDelta = 10;
 
 @Injectable()
 export class QuestionService {
@@ -28,6 +31,18 @@ export class QuestionService {
       },
     });
     return getQuestionsFromPrisma(data);
+  }
+
+  getPosition({ next }: { next: boolean }, positions: number[]): number {
+    if (positions.length === 2) {
+      return (positions[0] + positions[1]) / 2;
+    } else if (positions.length === 1) {
+      if (next) {
+        return positions[0] / 2;
+      }
+      return positions[0] + positionDelta;
+    }
+    return positionDelta;
   }
 
   async createQuestion(
@@ -56,21 +71,11 @@ export class QuestionService {
         position: 'asc',
       },
     });
-    let position = 10;
-    if (questions.length === 2) {
-      // We are placing new question between two existing questions
-      position = (questions[0].position + questions[1].position) / 2;
-    } else if (questions.length === 1) {
-      // We only have one question
-      if (data.nextId) {
-        // We are placing it at the first stop
-        position = questions[0].position / 2;
-      } else if (data.previousId) {
-        position = questions[0].position + 10;
-      }
-    } else {
-      position = 10;
-    }
+
+    const position = this.getPosition(
+      { next: !!data.nextId },
+      questions.map(({ position }) => position),
+    );
 
     const question = await this.prisma.question.create({
       data: {
@@ -83,7 +88,7 @@ export class QuestionService {
         type: data.type,
         options: {
           create: {
-            position: 0,
+            position: positionDelta,
           },
         },
       },
@@ -166,11 +171,25 @@ export class QuestionService {
           type: data.type,
           options: {
             create: {
-              position: 10,
+              position: positionDelta,
             },
           },
         },
         select: selectQuestion,
+      });
+      return getQuestionFromPrisma(question);
+    }
+    if (data.type === QuestionType.TEXT) {
+      const question = await this.prisma.question.update({
+        where: {
+          id,
+        },
+        data: {
+          type: data.type,
+          options: {
+            deleteMany: {},
+          },
+        },
       });
       return getQuestionFromPrisma(question);
     }
@@ -180,6 +199,56 @@ export class QuestionService {
       },
       data: {
         type: data.type,
+      },
+      select: selectQuestion,
+    });
+    return getQuestionFromPrisma(question);
+  }
+
+  async addOption(questionId: number, data: AddOptionDto) {
+    const ids = [];
+    if (data.previousId) {
+      ids.push(data.previousId);
+    }
+    if (data.nextId) {
+      ids.push(data.nextId);
+    }
+    // First we need to get all positions
+    const options = await this.prisma.option.findMany({
+      where: {
+        AND: [
+          {
+            id: {
+              in: ids,
+            },
+          },
+          { questionId },
+        ],
+      },
+      select: {
+        id: true,
+        position: true,
+      },
+      orderBy: {
+        position: 'asc',
+      },
+    });
+
+    const position = this.getPosition(
+      { next: !!data.nextId },
+      options.map(({ position }) => position),
+    );
+
+    const question = await this.prisma.question.update({
+      where: {
+        id: questionId,
+      },
+      data: {
+        options: {
+          create: {
+            position,
+          },
+        },
       },
       select: selectQuestion,
     });

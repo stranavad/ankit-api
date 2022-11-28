@@ -38,3 +38,8 @@ export class UpdateQuestionTypeDto {
   @IsNotEmpty()
   currentType: QuestionType;
 }
+
+export class AddOptionDto {
+  previousId: number | null = null;
+  nextId: number | null = null;
+}
