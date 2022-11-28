@@ -1,5 +1,5 @@
-import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
-import { QuestionType, Status, Structure } from './questionnaire.interface';
+import { IsNotEmpty, IsString } from 'class-validator';
+import { Status, Structure } from './questionnaire.interface';
 
 export class CreateQuestionnaireDto {
   @IsString()
@@ -26,10 +26,4 @@ export class UpdateQuestionnaireDto {
   passwordProtected?: boolean | null = null;
   // @IsString()
   password?: string | null = null;
-}
-
-export class CreateQuestionDto {
-  @IsEnum(QuestionType)
-  @IsNotEmpty()
-  type: QuestionType;
 }
