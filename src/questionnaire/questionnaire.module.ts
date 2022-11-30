@@ -7,9 +7,11 @@ import {
 import { PrismaService } from '../prisma.service';
 import { AccountService } from '../account/account.service';
 import { AuthService } from '../auth/auth.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  providers: [QuestionnaireService, PrismaService, AccountService, AuthService],
+  providers: [QuestionnaireService, PrismaService, AccountService],
   controllers: [GeneralQuestionnaireController, QuestionnaireController],
+  imports: [AuthModule],
 })
 export class QuestionnaireModule {}

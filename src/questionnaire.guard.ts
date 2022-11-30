@@ -32,6 +32,16 @@ export class QuestionnaireGuard implements CanActivate {
       request.headers.authorization,
     );
 
+    this.authService.checkJwt(request.headers.authorization);
+
+    // const decodedToken = this.jwtService.decode(token || '', {});
+    // const decodedToken = await this.jwtService.verify(
+    //   token || '',
+    //   'gaURUd9jRLXf1jDo709nDJwQZy1SsJbhspvRlb50LPFMyw7JCd',
+    // );
+
+    // console.log(decodedToken);
+
     const userId = Number(request.headers.userid) || null;
     const questionnaireId = Number(request.params.id) || null;
 
