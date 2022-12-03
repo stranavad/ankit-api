@@ -4,6 +4,7 @@ import {
   ApplicationQuestionnaire,
   CurrentQuestionnaire,
   DetailQuestionnaire,
+  getApplicationQuestionnaireFromPrisma,
   getApplicationQuestionnairesFromPrisma,
   getDetailQuestionnaireFromPrisma,
   selectApplicationQuestionnaire,
@@ -137,6 +138,9 @@ export class QuestionnaireService {
     const questionnaires = await this.prisma.questionnaire.findMany({
       where,
       select: selectApplicationQuestionnaire,
+      orderBy: {
+        updated: 'desc',
+      },
     });
     return getApplicationQuestionnairesFromPrisma(questionnaires);
   }
@@ -147,7 +151,7 @@ export class QuestionnaireService {
   }: {
     name: string;
     spaceId: number;
-  }): Promise<DetailQuestionnaire> {
+  }): Promise<ApplicationQuestionnaire> {
     const questionnaire = await this.prisma.questionnaire.create({
       data: {
         name,
@@ -160,9 +164,9 @@ export class QuestionnaireService {
           create: {},
         },
       },
-      select: selectDetailQuestionnaire,
+      select: selectApplicationQuestionnaire,
     });
-    return getDetailQuestionnaireFromPrisma(questionnaire);
+    return getApplicationQuestionnaireFromPrisma(questionnaire);
   }
 
   checkPerms<ValueType>(

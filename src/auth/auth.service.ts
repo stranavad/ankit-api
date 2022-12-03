@@ -1,28 +1,80 @@
 import { Injectable } from '@nestjs/common';
-import { RoleType } from '../role';
+import { parseRole, RoleType } from '../role';
 import { JwtService } from '@nestjs/jwt';
-import { JwtPayload } from 'jsonwebtoken';
+import { JwtPayload } from './auth.interface';
+import { PrismaService } from '../prisma.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private jwtService: JwtService) {}
-  isExpiresAtValid(expiresAt: number | null): boolean {
-    const currentData = Math.floor(Date.now() / 1000);
-    return expiresAt ? expiresAt >= currentData : false;
+  constructor(
+    private jwtService: JwtService,
+    private prismaService: PrismaService,
+  ) {}
+
+  getJwtPayload(token: string): null | JwtPayload {
+    const parsedToken = token.split(' ')[1];
+    if (!parsedToken) {
+      return null;
+    }
+    return this.jwtService.verify(parsedToken) as JwtPayload;
   }
 
-  parseAuthorizationToken(header: string): string | null {
-    return header?.split(' ')[1] || null;
+  async authenticateSpaceRoute(
+    userId: number,
+    spaceId: number,
+  ): Promise<{ id: number; role: RoleType } | null> {
+    const member = await this.prismaService.member.findUnique({
+      where: {
+        userId_spaceId: {
+          userId,
+          spaceId,
+        },
+      },
+      select: {
+        id: true,
+        role: true,
+      },
+    });
+    return member ? { ...member, role: parseRole(member.role) } : null;
   }
 
-  async checkJwt(token: string) {
-    console.log(token);
-    // const decoded = await this.jwtService.decode(token);
-    console.log(
-      await this.jwtService.verifyAsync(token, {
-        secret: 'gaURUd9jRLXf1jDo709nDJwQZy1SsJbhspvRlb50LPFMyw7JCd',
-      }),
-    );
+  async authenticateQuestionnaireRoute(
+    userId: number,
+    questionnaireId: number,
+  ): Promise<{ memberId: number; role: RoleType; spaceId: number } | null> {
+    const questionnaire = await this.prismaService.questionnaire.findUnique({
+      where: {
+        id: questionnaireId,
+      },
+      select: {
+        space: {
+          select: {
+            id: true,
+            members: {
+              where: {
+                userId,
+              },
+              select: {
+                id: true,
+                role: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!questionnaire) {
+      return null;
+    }
+
+    const space = questionnaire.space;
+    const member = questionnaire.space.members[0];
+    return {
+      memberId: member.id,
+      spaceId: space.id,
+      role: parseRole(member.role),
+    };
   }
 
   isRoleEnough(requiredRole: RoleType, actualRole: RoleType): boolean {

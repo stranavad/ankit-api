@@ -18,3 +18,9 @@ export interface UserAuth {
 export interface QuestionnaireAuth extends MemberAuth {
   questionnaireId: number;
 }
+
+export interface JwtPayload {
+  id: number;
+  iat: number;
+  exp: number;
+}

@@ -19,6 +19,7 @@ import { SpaceId } from '../space.decorator';
 import { QuestionnaireId } from '../questionnaire.decorator';
 import { Role } from '../role.decorator';
 import {
+  ApplicationQuestionnaire,
   CurrentQuestionnaire,
   DetailQuestionnaire,
 } from './questionnaire.interface';
@@ -45,7 +46,7 @@ export class GeneralQuestionnaireController {
   createQuestionnaire(
     @Body() data: CreateQuestionnaireDto,
     @SpaceId() spaceId: number,
-  ): Promise<DetailQuestionnaire> {
+  ): Promise<ApplicationQuestionnaire> {
     return this.questionnaireService.createQuestionnaire({
       name: data.name,
       spaceId: spaceId,

@@ -6,7 +6,6 @@ import {
   HttpException,
   HttpStatus,
   Param,
-  Headers,
   ParseIntPipe,
   Post,
   Put,
@@ -31,7 +30,6 @@ import { RoleType } from '../role';
 import { MemberId } from '../member.decorator';
 import { UserId } from '../user.decorator';
 import { SpaceId } from '../space.decorator';
-import { UserService } from '../user/user.service';
 import { AcceptSpaceInvitationDto } from '../member/member.dto';
 import { Role } from '../role.decorator';
 
@@ -41,7 +39,6 @@ export class SpaceController {
     private memberService: MemberService,
     private accountService: AccountService,
     private spaceService: SpaceService,
-    private userService: UserService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -50,7 +47,6 @@ export class SpaceController {
     @UserId() userId: number,
     @Query() query: GetUserSpaces,
   ): Promise<ApplicationSpace[] | null> {
-    console.log(query);
     const filter = {
       accepted: query.accepted === 'true',
       search: query.search,
@@ -208,7 +204,7 @@ export class SpaceController {
   //   if (!isInSpace) {
   //     throw new HttpException(
   //       {
-  //         status: HttpStatus.BAD_REQUEST,
+  //         status: HttpStatus.BAD_REQUEST
   //         error: `Member '${memberId}' does not exist or is not in this space`,
   //       },
   //       HttpStatus.BAD_REQUEST,

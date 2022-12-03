@@ -164,7 +164,6 @@ export class MemberService {
       },
       select: { id: true },
     });
-    console.log(member);
     return !!member;
   }
 
@@ -207,29 +206,6 @@ export class MemberService {
     });
   }
 
-  // async isMemberInSpace(memberId: number, spaceId: number): Promise<boolean> {
-  //   const member = await this.prisma.member.findFirst({
-  //     where: {
-  //       id: memberId,
-  //       spaceId,
-  //     },
-  //   });
-  //   return !!member;
-  // }
-  //
-  // async getMemberRole(memberId: number): Promise<RoleType | null> {
-  //   const member = await this.prisma.member.findUnique({
-  //     where: {
-  //       id: memberId,
-  //     },
-  //     select: {
-  //       role: true,
-  //     },
-  //   });
-  //   return member ? parseRole(member.role) : null;
-  // }
-  //
-  //
   async updateRole(
     memberId: number,
     role: RoleType,

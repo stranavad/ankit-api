@@ -20,25 +20,17 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const token = this.authService.parseAuthorizationToken(
-      request.headers?.authorization,
+
+    const jwtPayload = this.authService.getJwtPayload(
+      request.headers.authorization,
     );
-    const userId = Number(request.headers.userid) || null;
-    if (!token || !userId) {
+
+    if (!jwtPayload) {
       return false;
     }
 
-    const userAuth = await this.accountService.findAccountByUserId(
-      userId,
-      token,
-    );
+    request['userId'] = jwtPayload.id;
 
-    if (!userAuth) {
-      return false;
-    }
-
-    request['userId'] = userAuth.id;
-
-    return this.authService.isExpiresAtValid(userAuth.expiresAt);
+    return true;
   }
 }

@@ -1,8 +1,6 @@
 import {
   CanActivate,
   ExecutionContext,
-  HttpException,
-  HttpStatus,
   Inject,
   Injectable,
 } from '@nestjs/common';
@@ -21,50 +19,34 @@ export class RolesGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const roles = this.reflector.get<RoleType[]>('roles', context.getHandler());
-
-    if (!roles) {
-      console.error('You have not specified role for RoleGuard');
-      return false;
-    }
+    const requiredRole = roles ? roles[0] : RoleType.VIEW;
 
     const request = context.switchToHttp().getRequest();
 
-    const token = this.authService.parseAuthorizationToken(
+    const jwtPayload = this.authService.getJwtPayload(
       request.headers.authorization,
     );
 
-    const userId = Number(request.headers.userid) || null;
     const spaceId = Number(request.params.id) || null;
 
-    // TODO check for NaN
-    if (!token || !userId || !spaceId) {
+    if (!jwtPayload || !spaceId) {
       return false;
     }
 
-    const memberAuth = await this.accountService.getMemberDetailsByAccessToken(
-      userId,
-      token,
+    const memberAuth = await this.authService.authenticateSpaceRoute(
+      jwtPayload.id,
       spaceId,
     );
 
-    if (
-      !memberAuth ||
-      !this.authService.isExpiresAtValid(memberAuth.expiresAt)
-    ) {
-      throw new HttpException(
-        {
-          status: HttpStatus.UNAUTHORIZED,
-          error: `Doesn't belong to space`,
-        },
-        HttpStatus.UNAUTHORIZED,
-      );
+    if (!memberAuth) {
+      return false;
     }
 
-    request['userId'] = memberAuth.userId;
-    request['memberId'] = memberAuth.memberId;
+    request['userId'] = jwtPayload.id;
+    request['memberId'] = memberAuth.id;
     request['role'] = memberAuth.role;
-    request['spaceId'] = memberAuth.spaceId;
+    request['spaceId'] = spaceId;
 
-    return this.authService.isRoleEnough(roles[0], memberAuth.role);
+    return this.authService.isRoleEnough(requiredRole, memberAuth.role);
   }
 }

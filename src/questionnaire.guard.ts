@@ -1,7 +1,6 @@
 import {
   CanActivate,
   ExecutionContext,
-  HttpException,
   Inject,
   Injectable,
 } from '@nestjs/common';
@@ -20,61 +19,37 @@ export class QuestionnaireGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const roles = this.reflector.get<RoleType[]>('roles', context.getHandler());
-
-    if (!roles) {
-      console.error('You have not specified role for RoleGuard');
-      return false;
-    }
+    const requiredRole = roles ? roles[0] : RoleType.VIEW;
 
     const request = context.switchToHttp().getRequest();
 
-    const token = this.authService.parseAuthorizationToken(
+    const jwtPayload = this.authService.getJwtPayload(
       request.headers.authorization,
     );
 
-    this.authService.checkJwt(request.headers.authorization);
-
-    // const decodedToken = this.jwtService.decode(token || '', {});
-    // const decodedToken = await this.jwtService.verify(
-    //   token || '',
-    //   'gaURUd9jRLXf1jDo709nDJwQZy1SsJbhspvRlb50LPFMyw7JCd',
-    // );
-
-    // console.log(decodedToken);
-
-    const userId = Number(request.headers.userid) || null;
     const questionnaireId = Number(request.params.id) || null;
 
-    if (!token || !userId || !questionnaireId) {
+    if (!jwtPayload || !questionnaireId) {
       return false;
     }
 
-    const memberAuth =
-      await this.accountService.getMemberDetailsByAccessTokenQuestionnaire(
-        userId,
-        token,
-        questionnaireId,
-      );
+    const memberAuth = await this.authService.authenticateQuestionnaireRoute(
+      jwtPayload.id,
+      questionnaireId,
+    );
 
-    if (
-      !memberAuth ||
-      !this.authService.isExpiresAtValid(memberAuth.expiresAt)
-    ) {
-      throw new HttpException(
-        {
-          status: 405,
-          error: `Questionnaire doesn't exist or you don't have access to it`,
-        },
-        405,
-      );
+    if (!memberAuth) {
+      return false;
     }
 
-    request['userId'] = memberAuth.userId;
+    // From request
+    request['userId'] = jwtPayload.id;
+    request['questionnaireId'] = questionnaireId;
+    // To get
     request['memberId'] = memberAuth.memberId;
     request['role'] = memberAuth.role;
     request['spaceId'] = memberAuth.spaceId;
-    request['questionnaireId'] = memberAuth.questionnaireId;
 
-    return this.authService.isRoleEnough(roles[0], memberAuth.role);
+    return this.authService.isRoleEnough(requiredRole, memberAuth.role);
   }
 }
