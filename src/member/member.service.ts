@@ -87,44 +87,13 @@ export class MemberService {
 
   async getAllMembersWithSpaces(
     userId: number,
-    filter: { accepted?: boolean; search?: string | null },
   ): Promise<ApplicationSpace[] | null> {
-    let memberWhere = Prisma.validator<Prisma.MemberWhereInput>()({});
-    if ((filter.accepted || filter.accepted === false) && filter.search) {
-      memberWhere = {
-        AND: [
-          {
-            accepted: filter.accepted,
-          },
-          {
-            space: {
-              name: {
-                contains: filter.search,
-              },
-            },
-          },
-        ],
-      };
-    } else if (filter.accepted || filter.accepted === false) {
-      memberWhere = {
-        accepted: filter.accepted,
-      };
-    } else if (filter.search) {
-      memberWhere = {
-        space: {
-          name: {
-            contains: filter.search,
-          },
-        },
-      };
-    }
     const members = await this.prisma.user.findUnique({
       where: {
         id: userId,
       },
       select: {
         members: {
-          where: memberWhere,
           orderBy: {
             updated: 'desc',
           },

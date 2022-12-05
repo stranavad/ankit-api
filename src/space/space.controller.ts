@@ -45,13 +45,8 @@ export class SpaceController {
   @Get()
   async getUserSpaces(
     @UserId() userId: number,
-    @Query() query: GetUserSpaces,
   ): Promise<ApplicationSpace[] | null> {
-    const filter = {
-      accepted: query.accepted === 'true',
-      search: query.search,
-    };
-    return await this.memberService.getAllMembersWithSpaces(userId, filter);
+    return await this.memberService.getAllMembersWithSpaces(userId);
   }
 
   @UseGuards(RolesGuard)
