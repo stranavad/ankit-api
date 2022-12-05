@@ -1,7 +1,7 @@
 name: remote ssh command
 on:
   push:
-    branches: [development]
+    branches: [questionnaire]
 jobs:
 
   Deploy:
