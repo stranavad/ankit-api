@@ -301,7 +301,6 @@ export class QuestionService {
     let firstPosition = 0;
     let secondPosition = 0;
     if (activeIndex > overIndex) {
-      // Going down the line
       firstPosition = overIndex > 0 ? options[overIndex - 1].position : 0;
       secondPosition = options[overIndex].position;
     } else if (activeIndex < overIndex) {
