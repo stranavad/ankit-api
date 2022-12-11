@@ -16,6 +16,9 @@ export const selectQuestion = Prisma.validator<Prisma.QuestionSelect>()({
       value: true,
       position: true,
     },
+    orderBy: {
+      position: 'asc',
+    },
   },
 });
 

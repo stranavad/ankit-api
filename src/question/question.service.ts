@@ -7,8 +7,9 @@ import {
 } from './question.interface';
 import { PrismaService } from '../prisma.service';
 import {
-  AddOptionDto,
   CreateQuestionDto,
+  UpdateOptionDto,
+  UpdateOptionPositionDto,
   UpdateQuestionDto,
   UpdateQuestionTypeDto,
 } from './question.dto';
@@ -205,25 +206,84 @@ export class QuestionService {
     return getQuestionFromPrisma(question);
   }
 
-  async addOption(questionId: number, data: AddOptionDto) {
-    const ids = [];
-    if (data.previousId) {
-      ids.push(data.previousId);
-    }
-    if (data.nextId) {
-      ids.push(data.nextId);
-    }
+  async addOption(questionId: number, value = 'New Option') {
     // First we need to get all positions
+    const options = await this.prisma.option.findFirst({
+      where: {
+        questionId,
+      },
+      select: {
+        position: true,
+      },
+      orderBy: {
+        position: 'desc',
+      },
+    });
+
+    const position = options ? options.position + 10 : 10;
+
+    const question = await this.prisma.question.update({
+      where: {
+        id: questionId,
+      },
+      data: {
+        options: {
+          create: {
+            position,
+            value,
+          },
+        },
+      },
+      select: selectQuestion,
+    });
+    return getQuestionFromPrisma(question);
+  }
+
+  async updateOption(
+    optionId: number,
+    data: UpdateOptionDto,
+  ): Promise<Question | null> {
+    const option = await this.prisma.option.update({
+      where: {
+        id: optionId,
+      },
+      data: {
+        value: data.value,
+      },
+      select: {
+        question: {
+          select: selectQuestion,
+        },
+      },
+    });
+
+    return option ? getQuestionFromPrisma(option.question) : null;
+  }
+
+  async deleteOption(optionId: number): Promise<Question | null> {
+    const option = await this.prisma.option.delete({
+      where: {
+        id: optionId,
+      },
+      select: {
+        question: {
+          select: selectQuestion,
+        },
+      },
+    });
+    option.question.options = option.question.options.filter(
+      ({ id }) => id !== optionId,
+    );
+    return option ? getQuestionFromPrisma(option.question) : null;
+  }
+
+  async updateOptionPosition(
+    questionId: number,
+    { activeIndex, overIndex }: UpdateOptionPositionDto,
+  ): Promise<Question | null> {
     const options = await this.prisma.option.findMany({
       where: {
-        AND: [
-          {
-            id: {
-              in: ids,
-            },
-          },
-          { questionId },
-        ],
+        questionId,
       },
       select: {
         id: true,
@@ -234,25 +294,40 @@ export class QuestionService {
       },
     });
 
-    const position = this.getPosition(
-      { next: !!data.nextId },
-      options.map(({ position }) => position),
-    );
+    if (!options) {
+      return null;
+    }
 
-    const question = await this.prisma.question.update({
+    let firstPosition = 0;
+    let secondPosition = 0;
+    if (activeIndex > overIndex) {
+      // Going down the line
+      firstPosition = overIndex > 0 ? options[overIndex - 1].position : 0;
+      secondPosition = options[overIndex].position;
+    } else if (activeIndex < overIndex) {
+      firstPosition = options[overIndex].position;
+      secondPosition = options[overIndex + 1]
+        ? options[overIndex + 1].position
+        : firstPosition + 10;
+    }
+    const position = (firstPosition + secondPosition) / 2;
+    const id = options[activeIndex].id;
+
+    const option = await this.prisma.option.update({
       where: {
-        id: questionId,
+        id,
       },
       data: {
-        options: {
-          create: {
-            position,
-          },
+        position,
+      },
+      select: {
+        question: {
+          select: selectQuestion,
         },
       },
-      select: selectQuestion,
     });
-    return getQuestionFromPrisma(question);
+
+    return getQuestionFromPrisma(option.question);
   }
 }
 

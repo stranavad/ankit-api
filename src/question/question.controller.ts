@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, Put, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { QuestionnaireGuard } from '../questionnaire.guard';
 import { RoleType } from '../role';
 import { QuestionnaireId } from '../questionnaire.decorator';
@@ -7,7 +16,10 @@ import { Question } from './question.interface';
 import { QuestionService } from './question.service';
 import { QuestionId } from '../question.decorator';
 import {
+  AddOptionDto,
   CreateQuestionDto,
+  UpdateOptionDto,
+  UpdateOptionPositionDto,
   UpdateQuestionDto,
   UpdateQuestionTypeDto,
 } from './question.dto';
@@ -43,6 +55,40 @@ export class QuestionController {
     @Body() body: UpdateQuestionDto,
   ) {
     return this.questionService.updateQuestion(questionId, body);
+  }
+
+  @Post(':questionId/option')
+  @UseGuards(QuestionnaireGuard)
+  @Roles(RoleType.EDIT)
+  createOption(@QuestionId() questionId: number, @Body() body: AddOptionDto) {
+    return this.questionService.addOption(questionId, body.value);
+  }
+
+  @Put(':questionId/option/:optionId')
+  @UseGuards(QuestionnaireGuard)
+  @Roles(RoleType.EDIT)
+  updateOptionValue(
+    @Body() data: UpdateOptionDto,
+    @Param('optionId') optionId: number,
+  ) {
+    return this.questionService.updateOption(optionId, data);
+  }
+
+  @Delete(':questionId/option/:optionId')
+  @UseGuards(QuestionnaireGuard)
+  @Roles(RoleType.EDIT)
+  deleteOption(@Param('optionId') optionId: number) {
+    return this.questionService.deleteOption(optionId);
+  }
+
+  @Put(':questionId/option/position')
+  @UseGuards(QuestionnaireGuard)
+  @Roles(RoleType.EDIT)
+  updateOptionPosition(
+    @QuestionId() questionId: number,
+    @Body() body: UpdateOptionPositionDto,
+  ) {
+    return this.questionService.updateOptionPosition(questionId, body);
   }
 
   @Put(':questionId/type')

@@ -2,6 +2,7 @@ import {
   IsBoolean,
   IsEnum,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
 } from 'class-validator';
@@ -40,6 +41,20 @@ export class UpdateQuestionTypeDto {
 }
 
 export class AddOptionDto {
-  previousId: number | null = null;
-  nextId: number | null = null;
+  value: string;
+}
+
+export class UpdateOptionPositionDto {
+  @IsNotEmpty()
+  @IsNumber()
+  overIndex: number;
+  @IsNotEmpty()
+  @IsNumber()
+  activeIndex: number;
+}
+
+export class UpdateOptionDto {
+  @IsNotEmpty()
+  @IsString()
+  value: string;
 }

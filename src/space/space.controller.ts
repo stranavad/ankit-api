@@ -9,7 +9,6 @@ import {
   ParseIntPipe,
   Post,
   Put,
-  Query,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '../auth.guard';
@@ -17,7 +16,6 @@ import { MemberService } from '../member/member.service';
 import {
   AddMemberToSpaceDto,
   CreateSpaceDto,
-  GetUserSpaces,
   UpdateSpaceDto,
   UpdateSpaceMemberDto,
 } from './space.dto';
