@@ -100,4 +100,13 @@ export class QuestionController {
   ) {
     return this.questionService.updateQuestionType(questionId, data);
   }
+
+  @Post(':questionId/duplicate')
+  @UseGuards(QuestionnaireGuard)
+  @Roles(RoleType.EDIT)
+  duplicateQuestion(
+    @QuestionId() questionId: number,
+  ): Promise<Question[] | null> {
+    return this.questionService.duplicateQuestion(questionId);
+  }
 }

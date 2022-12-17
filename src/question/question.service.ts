@@ -309,6 +309,7 @@ export class QuestionService {
         ? options[overIndex + 1].position
         : firstPosition + 10;
     }
+
     const position = (firstPosition + secondPosition) / 2;
     const id = options[activeIndex].id;
 
@@ -327,6 +328,97 @@ export class QuestionService {
     });
 
     return getQuestionFromPrisma(option.question);
+  }
+
+  async duplicateQuestion(questionId: number): Promise<Question[] | null> {
+    // return null;
+    const questionToDuplicate = await this.prisma.question.findUnique({
+      where: {
+        id: questionId,
+      },
+      select: {
+        title: true,
+        description: true,
+        visible: true,
+        required: true,
+        timeLimit: true,
+        position: true,
+        type: true,
+        questionnaireId: true,
+        options: {
+          select: {
+            value: true,
+            position: true,
+          },
+        },
+      },
+    });
+
+    if (!questionToDuplicate) {
+      return null;
+    }
+
+    // We need to figure out new question position
+    const questionsPositions = await this.prisma.question.findMany({
+      where: {
+        questionnaireId: questionToDuplicate.questionnaireId,
+      },
+      select: {
+        id: true,
+        position: true,
+      },
+      orderBy: {
+        position: 'asc',
+      },
+    });
+
+    const foundQuestion = questionsPositions.find(
+      ({ id }) => id === questionId,
+    );
+
+    if (!foundQuestion) {
+      return null;
+    }
+
+    const oldQuestionIndex = questionsPositions.indexOf(foundQuestion);
+
+    let newPosition = 0;
+
+    // Determine the next position
+    if (oldQuestionIndex === questionsPositions.length - 1) {
+      newPosition = questionsPositions[oldQuestionIndex].position + 10;
+    } else {
+      newPosition =
+        (questionsPositions[oldQuestionIndex].position +
+          questionsPositions[oldQuestionIndex + 1].position) /
+        2;
+    }
+
+    const newQuestion = await this.prisma.question.create({
+      data: {
+        ...questionToDuplicate,
+        position: newPosition,
+        options: {
+          createMany: {
+            data: questionToDuplicate.options,
+          },
+        },
+      },
+      select: {
+        questionnaire: {
+          select: {
+            questions: {
+              select: selectQuestion,
+              orderBy: {
+                position: 'asc',
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return getQuestionsFromPrisma(newQuestion.questionnaire.questions);
   }
 }
 
