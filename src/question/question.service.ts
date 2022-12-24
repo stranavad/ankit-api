@@ -378,6 +378,9 @@ export class QuestionService {
           select: {
             questions: {
               select: selectQuestion,
+              orderBy: {
+                position: 'asc',
+              },
             },
           },
         },
