@@ -9,7 +9,7 @@ import { PrismaService } from '../prisma.service';
 import {
   CreateQuestionDto,
   UpdateOptionDto,
-  UpdateOptionPositionDto,
+  UpdatePositionDto,
   UpdateQuestionDto,
   UpdateQuestionTypeDto,
 } from './question.dto';
@@ -279,7 +279,7 @@ export class QuestionService {
 
   async updateOptionPosition(
     questionId: number,
-    { activeIndex, overIndex }: UpdateOptionPositionDto,
+    { activeIndex, overIndex }: UpdatePositionDto,
   ): Promise<Question | null> {
     const options = await this.prisma.option.findMany({
       where: {
@@ -328,6 +328,63 @@ export class QuestionService {
     });
 
     return getQuestionFromPrisma(option.question);
+  }
+
+  async updateQuestionPosition(
+    questionnaireId: number,
+    { activeIndex, overIndex }: UpdatePositionDto,
+  ): Promise<Question[] | null> {
+    const questions = await this.prisma.question.findMany({
+      where: {
+        questionnaireId,
+      },
+      select: {
+        id: true,
+        position: true,
+      },
+      orderBy: {
+        position: 'asc',
+      },
+    });
+
+    if (!questions) {
+      return null;
+    }
+
+    let firstPosition = 0;
+    let secondPosition = 0;
+    if (activeIndex > overIndex) {
+      firstPosition = overIndex > 0 ? questions[overIndex - 1].position : 0;
+      secondPosition = questions[overIndex].position;
+    } else if (activeIndex < overIndex) {
+      firstPosition = questions[overIndex].position;
+      secondPosition = questions[overIndex + 1]
+        ? questions[overIndex + 1].position
+        : firstPosition + 10;
+    }
+
+    const position = (firstPosition + secondPosition) / 2;
+    const id = questions[activeIndex].id;
+
+    const question = await this.prisma.question.update({
+      where: {
+        id,
+      },
+      data: {
+        position,
+      },
+      select: {
+        questionnaire: {
+          select: {
+            questions: {
+              select: selectQuestion,
+            },
+          },
+        },
+      },
+    });
+
+    return getQuestionsFromPrisma(question.questionnaire.questions);
   }
 
   async duplicateQuestion(questionId: number): Promise<Question[] | null> {

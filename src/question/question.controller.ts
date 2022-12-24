@@ -19,7 +19,7 @@ import {
   AddOptionDto,
   CreateQuestionDto,
   UpdateOptionDto,
-  UpdateOptionPositionDto,
+  UpdatePositionDto,
   UpdateQuestionDto,
   UpdateQuestionTypeDto,
 } from './question.dto';
@@ -81,12 +81,22 @@ export class QuestionController {
     return this.questionService.deleteOption(optionId);
   }
 
+  @Put('position')
+  @UseGuards(QuestionnaireGuard)
+  @Roles(RoleType.EDIT)
+  updateQuestionPosition(
+    @QuestionnaireId() questionnaireId: number,
+    @Body() body: UpdatePositionDto,
+  ): Promise<Question[] | null> {
+    return this.questionService.updateQuestionPosition(questionnaireId, body);
+  }
+
   @Put(':questionId/option/position')
   @UseGuards(QuestionnaireGuard)
   @Roles(RoleType.EDIT)
   updateOptionPosition(
     @QuestionId() questionId: number,
-    @Body() body: UpdateOptionPositionDto,
+    @Body() body: UpdatePositionDto,
   ) {
     return this.questionService.updateOptionPosition(questionId, body);
   }

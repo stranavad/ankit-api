@@ -44,7 +44,7 @@ export class AddOptionDto {
   value: string;
 }
 
-export class UpdateOptionPositionDto {
+export class UpdatePositionDto {
   @IsNotEmpty()
   @IsNumber()
   overIndex: number;
