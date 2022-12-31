@@ -21,7 +21,11 @@ import {
 } from './space.dto';
 import { AccountService } from '../account/account.service';
 import { SpaceService } from './space.service';
-import { ApplicationSpace, UpdateSpaceData } from './space.interface';
+import {
+  ApplicationSpace,
+  DetailSpace,
+  UpdateSpaceData,
+} from './space.interface';
 import { RolesGuard } from '../roles.guard';
 import { Roles } from '../roles.decorator';
 import { RoleType } from '../role';
@@ -58,6 +62,7 @@ export class SpaceController {
     if (acceptSpaceInvitation.accept) {
       return this.memberService.acceptInvitation(memberId);
     }
+
     if (role === RoleType.OWNER) {
       throw new HttpException(
         {
@@ -66,8 +71,8 @@ export class SpaceController {
         },
         HttpStatus.BAD_REQUEST,
       );
-      return;
     }
+
     return this.memberService.leaveSpace(memberId);
   }
 
@@ -91,8 +96,7 @@ export class SpaceController {
   async updateSpace(
     @SpaceId() spaceId: number,
     @Body() data: UpdateSpaceDto,
-    @MemberId() memberId: number,
-  ): Promise<ApplicationSpace | null> {
+  ): Promise<DetailSpace | null> {
     const updateData: UpdateSpaceData = {};
 
     if (data.name) {
@@ -102,7 +106,7 @@ export class SpaceController {
       updateData['description'] = data.description;
     }
 
-    return this.spaceService.updateSpace(updateData, spaceId, memberId);
+    return this.spaceService.updateSpace(updateData, spaceId);
   }
 
   @UseGuards(AuthGuard)

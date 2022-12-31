@@ -5,7 +5,6 @@ import {
   ApplicationSpace,
   CurrentSpace,
   DetailSpace,
-  selectApplicationSpace,
   selectApplicationSpaceWithDescription,
   selectDetailSpace,
   selectSimpleSpace,
@@ -137,35 +136,21 @@ export class SpaceService {
   async updateSpace(
     data: UpdateSpaceData,
     id: number,
-    memberId: number,
-  ): Promise<ApplicationSpace | null> {
+  ): Promise<DetailSpace | null> {
     const space = await this.prisma.space.update({
       where: {
         id,
       },
       data,
-      select: {
-        ...selectSimpleSpace,
-        members: {
-          where: {
-            id: memberId,
-          },
-          select: {
-            accepted: true,
-            role: true,
-            name: true,
-          },
-        },
-      },
+      select: selectDetailSpace,
     });
 
     return {
       id: space.id,
       name: space.name,
+      description: space.description,
       personal: space.personal,
-      accepted: space.members[0].accepted,
-      role: parseRole(space.members[0].role),
-      username: space.members[0].name,
+      members: getApplicationMembersFromPrismaApplicationMembers(space.members),
     };
   }
 

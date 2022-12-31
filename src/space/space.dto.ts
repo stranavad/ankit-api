@@ -1,10 +1,4 @@
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsString,
-  IsNumber,
-  IsBoolean,
-} from 'class-validator';
+import { IsNotEmpty, IsString, IsNumber } from 'class-validator';
 import { RoleType } from '../role';
 
 export class CreateSpaceDto {
@@ -17,8 +11,6 @@ export class CreateSpaceDto {
 }
 
 export class UpdateSpaceDto {
-  @IsString()
-  @IsNotEmpty()
   name: string;
 
   description: string | null = null;

@@ -11,12 +11,22 @@ export class AuthService {
     private prismaService: PrismaService,
   ) {}
 
-  getJwtPayload(token: string): null | JwtPayload {
+  getJwtPayload(token: string | undefined): null | JwtPayload {
+    if (!token) {
+      return null;
+    }
+
     const parsedToken = token.split(' ')[1];
+
     if (!parsedToken) {
       return null;
     }
-    return this.jwtService.verify(parsedToken) as JwtPayload;
+
+    try {
+      return this.jwtService.verify(parsedToken) as JwtPayload;
+    } catch (err) {
+      return null;
+    }
   }
 
   async authenticateSpaceRoute(
