@@ -256,6 +256,15 @@ export class SpaceService {
       : null;
   }
 
+  async leaveSpace(memberId: number): Promise<boolean> {
+    await this.prisma.member.delete({
+      where: {
+        id: memberId,
+      },
+    });
+    return true;
+  }
+
   // async transferOwnership(
   //   memberId: number,
   //   ownerId: number,

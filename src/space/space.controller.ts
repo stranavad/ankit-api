@@ -183,6 +183,22 @@ export class SpaceController {
     return 'deleted';
   }
 
+  @UseGuards(RolesGuard)
+  @Roles(RoleType.VIEW)
+  @Post(':id/leave')
+  async leaveSpace(@MemberId() memberId: number, @Role() role: RoleType) {
+    if (role === RoleType.OWNER) {
+      throw new HttpException(
+        {
+          status: HttpStatus.BAD_REQUEST,
+          error: 'You are the owner you gay',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return this.spaceService.leaveSpace(memberId);
+  }
+
   // @UseGuards(RolesGuard)
   // @Roles('owner')
   // @Post(':id/transfer-ownership')
