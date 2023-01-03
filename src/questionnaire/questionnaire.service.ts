@@ -286,6 +286,15 @@ export class QuestionnaireService {
       ? getDetailQuestionnaireFromPrisma(questionnaire)
       : null;
   }
+
+  async deleteQuestionnaire(id: number): Promise<boolean> {
+    await this.prisma.questionnaire.delete({
+      where: {
+        id,
+      },
+    });
+    return true;
+  }
 }
 
 interface QuestionnaireUpdateData {

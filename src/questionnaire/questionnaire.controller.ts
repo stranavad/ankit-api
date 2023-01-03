@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Post,
   Put,
@@ -95,5 +96,14 @@ export class QuestionnaireController {
       spaceId,
       userId,
     );
+  }
+
+  @Delete()
+  @UseGuards(QuestionnaireGuard)
+  @Roles(RoleType.ADMIN)
+  deleteQuestionnaire(
+    @QuestionnaireId() questionnaireId: number,
+  ): Promise<boolean> {
+    return this.questionnaireService.deleteQuestionnaire(questionnaireId);
   }
 }
