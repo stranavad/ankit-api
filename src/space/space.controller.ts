@@ -6,11 +6,9 @@ import {
   HttpException,
   HttpStatus,
   Param,
-  Headers,
   ParseIntPipe,
   Post,
   Put,
-  Query,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '../auth.guard';
@@ -18,20 +16,22 @@ import { MemberService } from '../member/member.service';
 import {
   AddMemberToSpaceDto,
   CreateSpaceDto,
-  GetUserSpaces,
   UpdateSpaceDto,
   UpdateSpaceMemberDto,
 } from './space.dto';
 import { AccountService } from '../account/account.service';
 import { SpaceService } from './space.service';
-import { ApplicationSpace, UpdateSpaceData } from './space.interface';
+import {
+  ApplicationSpace,
+  DetailSpace,
+  UpdateSpaceData,
+} from './space.interface';
 import { RolesGuard } from '../roles.guard';
 import { Roles } from '../roles.decorator';
 import { RoleType } from '../role';
 import { MemberId } from '../member.decorator';
 import { UserId } from '../user.decorator';
 import { SpaceId } from '../space.decorator';
-import { UserService } from '../user/user.service';
 import { AcceptSpaceInvitationDto } from '../member/member.dto';
 import { Role } from '../role.decorator';
 
@@ -41,21 +41,14 @@ export class SpaceController {
     private memberService: MemberService,
     private accountService: AccountService,
     private spaceService: SpaceService,
-    private userService: UserService,
   ) {}
 
   @UseGuards(AuthGuard)
   @Get()
   async getUserSpaces(
     @UserId() userId: number,
-    @Query() query: GetUserSpaces,
   ): Promise<ApplicationSpace[] | null> {
-    console.log(query);
-    const filter = {
-      accepted: query.accepted === 'true',
-      search: query.search,
-    };
-    return await this.memberService.getAllMembersWithSpaces(userId, filter);
+    return await this.memberService.getAllMembersWithSpaces(userId);
   }
 
   @UseGuards(RolesGuard)
@@ -69,6 +62,7 @@ export class SpaceController {
     if (acceptSpaceInvitation.accept) {
       return this.memberService.acceptInvitation(memberId);
     }
+
     if (role === RoleType.OWNER) {
       throw new HttpException(
         {
@@ -77,8 +71,8 @@ export class SpaceController {
         },
         HttpStatus.BAD_REQUEST,
       );
-      return;
     }
+
     return this.memberService.leaveSpace(memberId);
   }
 
@@ -102,8 +96,7 @@ export class SpaceController {
   async updateSpace(
     @SpaceId() spaceId: number,
     @Body() data: UpdateSpaceDto,
-    @MemberId() memberId: number,
-  ): Promise<ApplicationSpace | null> {
+  ): Promise<DetailSpace | null> {
     const updateData: UpdateSpaceData = {};
 
     if (data.name) {
@@ -113,7 +106,7 @@ export class SpaceController {
       updateData['description'] = data.description;
     }
 
-    return this.spaceService.updateSpace(updateData, spaceId, memberId);
+    return this.spaceService.updateSpace(updateData, spaceId);
   }
 
   @UseGuards(AuthGuard)
@@ -154,28 +147,11 @@ export class SpaceController {
   @Roles(RoleType.ADMIN)
   @Post(':id/member')
   async addMemberToSpace(
-    @UserId() userId: number,
     @SpaceId() spaceId: number,
     @Body() body: AddMemberToSpaceDto,
   ) {
-    // Check if user is in group already
-    const inSpace = await this.memberService.isUserInSpace(
-      body.userId,
-      spaceId,
-    );
-
-    if (inSpace) {
-      throw new HttpException(
-        {
-          status: HttpStatus.BAD_REQUEST,
-          error: 'This user is already in this space',
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
     return await this.spaceService.addMemberToSpace({
-      spaceId: spaceId,
+      spaceId,
       userId: body.userId,
       role: body.role,
       name: body.username,
@@ -190,34 +166,21 @@ export class SpaceController {
     return 'deleted';
   }
 
-  // @UseGuards(RolesGuard)
-  // @Roles('owner')
-  // @Post(':id/transfer-ownership')
-  // async transferSpaceOwnerShip(
-  //   @Param('id', ParseIntPipe) spaceId: number,
-  //   @Body() body: TransferOwnership,
-  //   @MemberId() ownerId: number,
-  // ) {
-  //   const { memberId } = body;
-  //   // Check if member is inspace
-  //   const isInSpace = await this.memberService.isMemberInSpace(
-  //     memberId,
-  //     spaceId,
-  //   );
-  //
-  //   if (!isInSpace) {
-  //     throw new HttpException(
-  //       {
-  //         status: HttpStatus.BAD_REQUEST,
-  //         error: `Member '${memberId}' does not exist or is not in this space`,
-  //       },
-  //       HttpStatus.BAD_REQUEST,
-  //     );
-  //   }
-  //   await this.memberService.updateRole(memberId, RoleType.OWNER);
-  //   await this.memberService.updateRole(ownerId, RoleType.ADMIN);
-  //   return this.spaceService.transferOwnership(memberId, ownerId, spaceId);
-  // }
+  @UseGuards(RolesGuard)
+  @Roles(RoleType.VIEW)
+  @Post(':id/leave')
+  async leaveSpace(@MemberId() memberId: number, @Role() role: RoleType) {
+    if (role === RoleType.OWNER) {
+      throw new HttpException(
+        {
+          status: HttpStatus.BAD_REQUEST,
+          error: 'You are the owner you gay',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return this.spaceService.leaveSpace(memberId);
+  }
 
   @UseGuards(RolesGuard)
   @Roles(RoleType.OWNER)

@@ -7,14 +7,12 @@ import {
 import { Reflector } from '@nestjs/core';
 import { AuthService } from './auth/auth.service';
 import { RoleType } from './role';
-import { AccountService } from './account/account.service';
 
 @Injectable()
-export class RolesGuard implements CanActivate {
+export class QuestionnaireGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
     @Inject(AuthService) private authService: AuthService,
-    @Inject(AccountService) private accountService: AccountService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -27,25 +25,28 @@ export class RolesGuard implements CanActivate {
       request.headers.authorization,
     );
 
-    const spaceId = Number(request.params.id) || null;
+    const questionnaireId = Number(request.params.id) || null;
 
-    if (!jwtPayload || !spaceId) {
+    if (!jwtPayload || !questionnaireId) {
       return false;
     }
 
-    const memberAuth = await this.authService.authenticateSpaceRoute(
+    const memberAuth = await this.authService.authenticateQuestionnaireRoute(
       jwtPayload.id,
-      spaceId,
+      questionnaireId,
     );
 
     if (!memberAuth) {
       return false;
     }
 
+    // From request
     request['userId'] = jwtPayload.id;
-    request['memberId'] = memberAuth.id;
+    request['questionnaireId'] = questionnaireId;
+    // To get
+    request['memberId'] = memberAuth.memberId;
     request['role'] = memberAuth.role;
-    request['spaceId'] = spaceId;
+    request['spaceId'] = memberAuth.spaceId;
 
     return this.authService.isRoleEnough(requiredRole, memberAuth.role);
   }

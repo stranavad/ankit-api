@@ -1,21 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { parseRole, RoleType } from '../role';
-
-interface MemberAuth {
-  accessToken: string | null;
-  expiresAt: number | null;
-  memberId: number;
-  role: RoleType;
-  userId: number;
-  spaceId: number;
-}
-
-interface UserAuth {
-  id: number | null;
-  accessToken: string | null;
-  expiresAt: number | null;
-}
+import { parseRole } from '../role';
+import { QuestionnaireAuth, UserAuth } from '../auth/auth.interface';
 
 @Injectable()
 export class AccountService {
@@ -52,31 +38,39 @@ export class AccountService {
       : null;
   }
 
-  async getMemberDetailsByAccessToken(
+  async getMemberDetailsByAccessTokenQuestionnaire(
     userId: number,
     token: string,
-    spaceId: number,
-  ): Promise<MemberAuth | null> {
-    const accounts = await this.prisma.account.findMany({
+    questionnaireId: number,
+  ): Promise<QuestionnaireAuth | null> {
+    const questionnaire = await this.prisma.questionnaire.findUnique({
       where: {
-        userId,
+        id: questionnaireId,
       },
       select: {
-        access_token: true,
-        expires_at: true,
-        user: {
+        id: true,
+        space: {
           select: {
             id: true,
             members: {
               where: {
-                spaceId,
+                userId: userId,
               },
               select: {
                 id: true,
                 role: true,
-                space: {
+                user: {
                   select: {
                     id: true,
+                    accounts: {
+                      where: {
+                        access_token: token,
+                      },
+                      select: {
+                        access_token: true,
+                        expires_at: true,
+                      },
+                    },
                   },
                 },
               },
@@ -86,20 +80,25 @@ export class AccountService {
       },
     });
 
-    const account =
-      accounts.find((account) => account.access_token === token) || null;
-
-    if (!account || !account.user.members[0]?.space?.id) {
+    if (
+      !questionnaire ||
+      !questionnaire.space.members[0].user.accounts.length
+    ) {
       return null;
     }
+
+    const member = questionnaire.space.members[0];
+    const user = questionnaire.space.members[0].user;
+    const account = questionnaire.space.members[0].user.accounts[0];
 
     return {
       accessToken: account.access_token,
       expiresAt: account.expires_at,
-      memberId: account.user.members[0].id,
-      role: parseRole(account.user.members[0].role),
-      userId: account.user.id,
-      spaceId: account.user.members[0].space.id,
+      memberId: member.id,
+      role: parseRole(member.role),
+      userId: user.id,
+      spaceId: questionnaire.space.id,
+      questionnaireId: questionnaire.id,
     };
   }
 }

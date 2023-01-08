@@ -3,7 +3,7 @@ import { RoleType } from '../role';
 import { Prisma } from '@prisma/client';
 import {
   ApplicationMember,
-  selectApplicationMember,
+  selectApplicationMembers,
 } from '../member/member.interface';
 
 export interface SimpleSpace extends Pick<Space, 'id' | 'name' | 'personal'> {
@@ -55,9 +55,7 @@ export const selectDetailSpace = Prisma.validator<Prisma.SpaceSelect>()({
   name: true,
   description: true,
   personal: true,
-  members: {
-    select: selectApplicationMember,
-  },
+  members: selectApplicationMembers,
 });
 
 export interface DetailSpace {

@@ -87,64 +87,27 @@ export class MemberService {
 
   async getAllMembersWithSpaces(
     userId: number,
-    filter: { accepted?: boolean; search?: string | null },
   ): Promise<ApplicationSpace[] | null> {
-    let memberWhere = Prisma.validator<Prisma.MemberWhereInput>()({});
-    if ((filter.accepted || filter.accepted === false) && filter.search) {
-      memberWhere = {
-        AND: [
-          {
-            accepted: filter.accepted,
-          },
-          {
-            space: {
-              name: {
-                contains: filter.search,
-              },
-            },
-          },
-        ],
-      };
-    } else if (filter.accepted || filter.accepted === false) {
-      memberWhere = {
-        accepted: filter.accepted,
-      };
-    } else if (filter.search) {
-      memberWhere = {
-        space: {
-          name: {
-            contains: filter.search,
-          },
-        },
-      };
-    }
-    const members = await this.prisma.user.findUnique({
+    const members = await this.prisma.member.findMany({
       where: {
-        id: userId,
+        userId,
+      },
+      orderBy: {
+        updated: 'desc',
       },
       select: {
-        members: {
-          where: memberWhere,
-          orderBy: {
-            updated: 'desc',
-          },
-          select: {
-            ...selectApplicationMember,
-            space: {
-              select: selectSimpleSpace,
-            },
-          },
-        },
-      },
-    });
+        ...selectApplicationMember,
+        space: {
+          select: selectSimpleSpace
+        }
+      }
+    })
+    
     if (!members) {
       return null;
     }
-    return this.mergeMembers(members);
-  }
 
-  mergeMembers(members: AllMembersWithSpaces): ApplicationSpace[] {
-    return members.members.map(({ space, name, accepted, role }) => ({
+    return members.map(({ space, name, accepted, role }) => ({
       id: space.id,
       name: space.name,
       username: name,
@@ -164,7 +127,6 @@ export class MemberService {
       },
       select: { id: true },
     });
-    console.log(member);
     return !!member;
   }
 
@@ -207,29 +169,6 @@ export class MemberService {
     });
   }
 
-  // async isMemberInSpace(memberId: number, spaceId: number): Promise<boolean> {
-  //   const member = await this.prisma.member.findFirst({
-  //     where: {
-  //       id: memberId,
-  //       spaceId,
-  //     },
-  //   });
-  //   return !!member;
-  // }
-  //
-  // async getMemberRole(memberId: number): Promise<RoleType | null> {
-  //   const member = await this.prisma.member.findUnique({
-  //     where: {
-  //       id: memberId,
-  //     },
-  //     select: {
-  //       role: true,
-  //     },
-  //   });
-  //   return member ? parseRole(member.role) : null;
-  // }
-  //
-  //
   async updateRole(
     memberId: number,
     role: RoleType,

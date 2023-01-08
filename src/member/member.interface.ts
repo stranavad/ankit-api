@@ -6,6 +6,7 @@ export interface PrismaApplicationMember {
   id: number;
   name: string;
   role: string;
+  deleted: boolean;
   accepted: boolean;
   user: { id: number; email: string; image: string | null };
 }
@@ -17,6 +18,7 @@ export const getApplicationMemberFromPrismaApplicationMember = (
   name: member.name,
   role: parseRole(member.role),
   accepted: member.accepted,
+  deleted: member.deleted,
   email: member.user.email,
   userId: member.user.id,
   image: member.user.image,
@@ -32,6 +34,7 @@ export interface ApplicationMember {
   name: string;
   role: RoleType;
   accepted: boolean;
+  deleted: boolean,
   email: string;
   image: string | null;
   userId: number;
@@ -41,6 +44,7 @@ export const selectApplicationMember = Prisma.validator<Prisma.MemberSelect>()({
   id: true,
   name: true,
   role: true,
+  deleted: true,
   accepted: true,
   user: {
     select: {
@@ -50,6 +54,17 @@ export const selectApplicationMember = Prisma.validator<Prisma.MemberSelect>()({
     },
   },
 });
+
+export const selectApplicationMembers = Prisma.validator<Prisma.MemberFindManyArgs>()({
+  select: selectApplicationMember,
+  orderBy: {
+    updated: 'desc'
+  },
+  where: {
+    deleted: false
+  }
+})
+
 
 export interface AllMembersWithSpaces {
   members: {
