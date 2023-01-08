@@ -88,32 +88,26 @@ export class MemberService {
   async getAllMembersWithSpaces(
     userId: number,
   ): Promise<ApplicationSpace[] | null> {
-    const members = await this.prisma.user.findUnique({
+    const members = await this.prisma.member.findMany({
       where: {
-        id: userId,
+        userId,
+      },
+      orderBy: {
+        updated: 'desc',
       },
       select: {
-        members: {
-          orderBy: {
-            updated: 'desc',
-          },
-          select: {
-            ...selectApplicationMember,
-            space: {
-              select: selectSimpleSpace,
-            },
-          },
-        },
-      },
-    });
+        ...selectApplicationMember,
+        space: {
+          select: selectSimpleSpace
+        }
+      }
+    })
+    
     if (!members) {
       return null;
     }
-    return this.mergeMembers(members);
-  }
 
-  mergeMembers(members: AllMembersWithSpaces): ApplicationSpace[] {
-    return members.members.map(({ space, name, accepted, role }) => ({
+    return members.map(({ space, name, accepted, role }) => ({
       id: space.id,
       name: space.name,
       username: name,

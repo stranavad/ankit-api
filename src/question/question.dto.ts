@@ -1,3 +1,4 @@
+import { QuestionType } from '@prisma/client';
 import {
   IsBoolean,
   IsEnum,
@@ -6,7 +7,6 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { QuestionType } from '../questionnaire/questionnaire.interface';
 
 export class CreateQuestionDto {
   @IsEnum(QuestionType)

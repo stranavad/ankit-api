@@ -23,6 +23,7 @@ import {
   UpdateQuestionDto,
   UpdateQuestionTypeDto,
 } from './question.dto';
+import { QuestionGuard } from 'src/question.guard';
 
 @Controller('questionnaire/:id/question')
 export class QuestionController {
@@ -48,7 +49,7 @@ export class QuestionController {
   }
 
   @Put(':questionId')
-  @UseGuards(QuestionnaireGuard)
+  @UseGuards(QuestionGuard)
   @Roles(RoleType.EDIT)
   updateQuestion(
     @QuestionId() questionId: number,
@@ -58,14 +59,14 @@ export class QuestionController {
   }
 
   @Post(':questionId/option')
-  @UseGuards(QuestionnaireGuard)
+  @UseGuards(QuestionGuard)
   @Roles(RoleType.EDIT)
   createOption(@QuestionId() questionId: number, @Body() body: AddOptionDto) {
     return this.questionService.addOption(questionId, body.value);
   }
 
   @Put(':questionId/option/:optionId')
-  @UseGuards(QuestionnaireGuard)
+  @UseGuards(QuestionGuard)
   @Roles(RoleType.EDIT)
   updateOptionValue(
     @Body() data: UpdateOptionDto,
@@ -75,7 +76,7 @@ export class QuestionController {
   }
 
   @Delete(':questionId/option/:optionId')
-  @UseGuards(QuestionnaireGuard)
+  @UseGuards(QuestionGuard)
   @Roles(RoleType.EDIT)
   deleteOption(@Param('optionId') optionId: number) {
     return this.questionService.deleteOption(optionId);
@@ -92,7 +93,7 @@ export class QuestionController {
   }
 
   @Put(':questionId/option/position')
-  @UseGuards(QuestionnaireGuard)
+  @UseGuards(QuestionGuard)
   @Roles(RoleType.EDIT)
   updateOptionPosition(
     @QuestionId() questionId: number,
@@ -102,7 +103,7 @@ export class QuestionController {
   }
 
   @Put(':questionId/type')
-  @UseGuards(QuestionnaireGuard)
+  @UseGuards(QuestionGuard)
   @Roles(RoleType.EDIT)
   updateQuestionType(
     @QuestionId() questionId: number,
@@ -111,8 +112,17 @@ export class QuestionController {
     return this.questionService.updateQuestionType(questionId, data);
   }
 
+  @Delete(":questionId")
+  @UseGuards(QuestionGuard)
+  @Roles(RoleType.EDIT)
+  deleteQuestion(
+    @QuestionId() questionId: number
+  ){
+    return this.questionService.deleteQuestion(questionId);
+  }
+
   @Post(':questionId/duplicate')
-  @UseGuards(QuestionnaireGuard)
+  @UseGuards(QuestionGuard)
   @Roles(RoleType.EDIT)
   duplicateQuestion(
     @QuestionId() questionId: number,

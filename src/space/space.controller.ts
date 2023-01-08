@@ -147,28 +147,11 @@ export class SpaceController {
   @Roles(RoleType.ADMIN)
   @Post(':id/member')
   async addMemberToSpace(
-    @UserId() userId: number,
     @SpaceId() spaceId: number,
     @Body() body: AddMemberToSpaceDto,
   ) {
-    // Check if user is in group already
-    const inSpace = await this.memberService.isUserInSpace(
-      body.userId,
-      spaceId,
-    );
-
-    if (inSpace) {
-      throw new HttpException(
-        {
-          status: HttpStatus.BAD_REQUEST,
-          error: 'This user is already in this space',
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
     return await this.spaceService.addMemberToSpace({
-      spaceId: spaceId,
+      spaceId,
       userId: body.userId,
       role: body.role,
       name: body.username,
@@ -198,35 +181,6 @@ export class SpaceController {
     }
     return this.spaceService.leaveSpace(memberId);
   }
-
-  // @UseGuards(RolesGuard)
-  // @Roles('owner')
-  // @Post(':id/transfer-ownership')
-  // async transferSpaceOwnerShip(
-  //   @Param('id', ParseIntPipe) spaceId: number,
-  //   @Body() body: TransferOwnership,
-  //   @MemberId() ownerId: number,
-  // ) {
-  //   const { memberId } = body;
-  //   // Check if member is inspace
-  //   const isInSpace = await this.memberService.isMemberInSpace(
-  //     memberId,
-  //     spaceId,
-  //   );
-  //
-  //   if (!isInSpace) {
-  //     throw new HttpException(
-  //       {
-  //         status: HttpStatus.BAD_REQUEST
-  //         error: `Member '${memberId}' does not exist or is not in this space`,
-  //       },
-  //       HttpStatus.BAD_REQUEST,
-  //     );
-  //   }
-  //   await this.memberService.updateRole(memberId, RoleType.OWNER);
-  //   await this.memberService.updateRole(ownerId, RoleType.ADMIN);
-  //   return this.spaceService.transferOwnership(memberId, ownerId, spaceId);
-  // }
 
   @UseGuards(RolesGuard)
   @Roles(RoleType.OWNER)

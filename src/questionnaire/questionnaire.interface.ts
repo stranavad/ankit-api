@@ -1,32 +1,32 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, QuestionnaireStatus } from '@prisma/client';
 import { ApplicationSpace } from '../space/space.interface';
 import { ApplicationMember } from '../member/member.interface';
+import { QuestionnaireStructure } from '@prisma/client';
 
-export enum Structure {
-  LIST = 'list',
-  INDIVIDUAL = 'individual',
-}
-
-export const parseStructure = (structure: string): Structure => {
+export const parseStructure = (structure: string | undefined): QuestionnaireStructure => {
   switch (structure) {
-    case Structure.LIST:
-      return Structure.LIST;
-    case Structure.INDIVIDUAL:
-      return Structure.INDIVIDUAL;
+    case QuestionnaireStructure.LIST:
+    case "list": 
+      return QuestionnaireStructure.LIST;
+    case QuestionnaireStructure.INDIVIDUAL:
+    case "individual":  
+      return QuestionnaireStructure.INDIVIDUAL;
     default:
-      return Structure.LIST;
+      return QuestionnaireStructure.LIST;
   }
 };
 
-export enum Status {
-  ACTIVE = 'active',
-  PAUSED = 'paused',
-}
-
-export enum QuestionType {
-  SELECT = 'select',
-  MULTI_SELECT = 'multiselect',
-  TEXT = 'text',
+export const parseStatus = (status: string | undefined): QuestionnaireStatus | undefined => {
+  switch(status){
+    case QuestionnaireStatus.ACTIVE:
+    case "active":
+      return QuestionnaireStatus.ACTIVE;
+    case QuestionnaireStatus.PAUSED:
+    case "paused":
+      return QuestionnaireStatus.PAUSED
+    default :
+      return undefined;      
+  }
 }
 
 export interface ApplicationQuestionnaire {
@@ -81,7 +81,7 @@ export interface DetailQuestionnaire extends ApplicationQuestionnaire {
   category: number;
   timeLimit: number | null;
   allowReturn: boolean;
-  structure: Structure;
+  structure: QuestionnaireStructure;
   passwordProtected: boolean;
   password: string | null;
 }

@@ -7,14 +7,12 @@ import {
 import { Reflector } from '@nestjs/core';
 import { AuthService } from './auth/auth.service';
 import { RoleType } from './role';
-import { AccountService } from './account/account.service';
 
 @Injectable()
 export class QuestionnaireGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
     @Inject(AuthService) private authService: AuthService,
-    @Inject(AccountService) private accountService: AccountService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {

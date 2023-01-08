@@ -87,6 +87,102 @@ export class AuthService {
     };
   }
 
+  async authenticateQuestionRoute(
+    userId: number,
+    questionnaireId: number,
+    questionId: number
+  ): Promise<{ memberId: number; role: RoleType; spaceId: number } | null> {
+    const questionnaire = await this.prismaService.questionnaire.findUnique({
+      where: {
+        id: questionnaireId,
+      },
+      select: {
+        space: {
+          select: {
+            id: true,
+            members: {
+              where: {
+                userId,
+              },
+              select: {
+                id: true,
+                role: true,
+              },
+            },
+          },
+        },
+        questions: {
+          where: {
+            id: questionId
+          },
+          select: {
+            id: true
+          }
+        }
+      },
+    });
+
+    if (!questionnaire || !questionnaire.questions) {
+      return null;
+    }
+
+    const space = questionnaire.space;
+    const member = questionnaire.space.members[0];
+    return {
+      memberId: member.id,
+      spaceId: space.id,
+      role: parseRole(member.role),
+    };
+  }
+
+  async authenticatePublishRoute(
+    userId: number,
+    questionnaireId: number,
+    publishedId: number
+  ): Promise<{ memberId: number; role: RoleType; spaceId: number } | null> {
+    const questionnaire = await this.prismaService.questionnaire.findUnique({
+      where: {
+        id: questionnaireId,
+      },
+      select: {
+        space: {
+          select: {
+            id: true,
+            members: {
+              where: {
+                userId,
+              },
+              select: {
+                id: true,
+                role: true,
+              },
+            },
+          },
+        },
+        published: {
+          where: {
+            id: publishedId
+          },
+          select: {
+            id: true
+          }
+        }
+      },
+    });
+
+    if (!questionnaire || !questionnaire.published) {
+      return null;
+    }
+
+    const space = questionnaire.space;
+    const member = questionnaire.space.members[0];
+    return {
+      memberId: member.id,
+      spaceId: space.id,
+      role: parseRole(member.role),
+    };
+  }
+
   isRoleEnough(requiredRole: RoleType, actualRole: RoleType): boolean {
     switch (requiredRole) {
       case RoleType.VIEW:

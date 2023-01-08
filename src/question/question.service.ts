@@ -4,6 +4,7 @@ import {
   getQuestionsFromPrisma,
   Question,
   selectQuestion,
+  selectQuestions,
 } from './question.interface';
 import { PrismaService } from '../prisma.service';
 import {
@@ -13,7 +14,7 @@ import {
   UpdateQuestionDto,
   UpdateQuestionTypeDto,
 } from './question.dto';
-import { QuestionType } from '../questionnaire/questionnaire.interface';
+import { QuestionType } from '@prisma/client';
 
 const positionDelta = 10;
 
@@ -24,7 +25,10 @@ export class QuestionService {
   async loadQuestions(questionnaireId: number): Promise<Question[]> {
     const data = await this.prisma.question.findMany({
       where: {
-        questionnaireId,
+        AND: [
+          {questionnaireId},
+          {deleted: false}
+        ]
       },
       select: selectQuestion,
       orderBy: {
@@ -62,7 +66,7 @@ export class QuestionService {
       where: {
         id: {
           in: ids,
-        },
+        }
       },
       select: {
         id: true,
@@ -95,14 +99,7 @@ export class QuestionService {
       },
       select: {
         questionnaire: {
-          select: {
-            questions: {
-              select: selectQuestion,
-              orderBy: {
-                position: 'asc',
-              },
-            },
-          },
+          select: selectQuestions,
         },
       },
     });
@@ -277,6 +274,15 @@ export class QuestionService {
     return option ? getQuestionFromPrisma(option.question) : null;
   }
 
+  async deleteQuestion(questionId: number): Promise<boolean>{
+    await this.prisma.question.delete({
+      where: {
+        id: questionId
+      }
+    });
+    return true;
+  }
+
   async updateOptionPosition(
     questionId: number,
     { activeIndex, overIndex }: UpdatePositionDto,
@@ -375,14 +381,7 @@ export class QuestionService {
       },
       select: {
         questionnaire: {
-          select: {
-            questions: {
-              select: selectQuestion,
-              orderBy: {
-                position: 'asc',
-              },
-            },
-          },
+          select: selectQuestions,
         },
       },
     });
@@ -466,14 +465,7 @@ export class QuestionService {
       },
       select: {
         questionnaire: {
-          select: {
-            questions: {
-              select: selectQuestion,
-              orderBy: {
-                position: 'asc',
-              },
-            },
-          },
+          select: selectQuestions,
         },
       },
     });

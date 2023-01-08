@@ -7,10 +7,10 @@ import {
   getApplicationQuestionnaireFromPrisma,
   getApplicationQuestionnairesFromPrisma,
   getDetailQuestionnaireFromPrisma,
+  parseStatus,
+  parseStructure,
   selectApplicationQuestionnaire,
   selectDetailQuestionnaire,
-  Status,
-  Structure,
 } from './questionnaire.interface';
 import { UpdateQuestionnaireDto } from './questionnaire.dto';
 import { parseRole, RoleType } from '../role';
@@ -27,6 +27,7 @@ import {
   ApplicationSpace,
   selectApplicationSpace,
 } from '../space/space.interface';
+import { QuestionnaireStatus, QuestionnaireStructure } from '@prisma/client';
 
 @Injectable()
 export class QuestionnaireService {
@@ -92,6 +93,7 @@ export class QuestionnaireService {
       id: member.id,
       name: member.name,
       role: parseRole(member.role),
+      deleted: member.deleted,
       accepted: member.accepted,
       email: member.user.email,
       image: member.user.image,
@@ -219,7 +221,7 @@ export class QuestionnaireService {
       UpdateQuestionnairePermission.STRUCTURE,
       role,
       (value) => {
-        questionnaireUpdateData.structure = value;
+        questionnaireUpdateData.structure = parseStructure(value);
       },
     );
     // Category
@@ -237,7 +239,7 @@ export class QuestionnaireService {
       UpdateQuestionnairePermission.STATUS,
       role,
       (value) => {
-        questionnaireUpdateData.status = value;
+        questionnaireUpdateData.status = parseStatus(value);
       },
     );
     // Time Limit
@@ -300,9 +302,9 @@ export class QuestionnaireService {
 interface QuestionnaireUpdateData {
   name?: string;
   description?: string;
-  structure?: Structure;
+  structure?: QuestionnaireStructure;
   category?: number;
-  status?: Status;
+  status?: QuestionnaireStatus;
   timeLimit?: number;
   allowReturn?: boolean;
   passwordProtected?: boolean;

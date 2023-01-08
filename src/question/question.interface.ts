@@ -1,6 +1,5 @@
 /* QUESTION */
-import { Prisma } from '@prisma/client';
-import { QuestionType } from '../questionnaire/questionnaire.interface';
+import { Prisma, QuestionType } from '@prisma/client';
 
 export const selectQuestion = Prisma.validator<Prisma.QuestionSelect>()({
   id: true,
@@ -9,6 +8,7 @@ export const selectQuestion = Prisma.validator<Prisma.QuestionSelect>()({
   visible: true,
   required: true,
   position: true,
+  deleted: true,
   type: true,
   options: {
     select: {
@@ -21,6 +21,18 @@ export const selectQuestion = Prisma.validator<Prisma.QuestionSelect>()({
     },
   },
 });
+
+export const selectQuestions = Prisma.validator<Prisma.QuestionnaireSelect>()({
+  questions: {
+    select: selectQuestion,
+    orderBy: {
+      position: 'asc'
+    },
+    where: {
+      deleted: false
+    }
+  }
+})
 
 export interface PrismaQuestion extends Omit<Question, 'type'> {
   type: string;
@@ -53,6 +65,7 @@ export interface Question {
   visible: boolean;
   required: boolean;
   position: number;
+  deleted: boolean;
   type: QuestionType;
   options?: Option[];
 }

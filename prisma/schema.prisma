@@ -45,10 +45,12 @@ model Member {
   accepted Boolean  @default(false)
   spaceId  Int
   created  DateTime @default(now())
-  updated  DateTime @default(now())
+  updated  DateTime @updatedAt
+  deleted  Boolean  @default(false)
   userId   Int
   space    Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  published PublishedQuestionnaire[]
 
   @@unique([userId, spaceId])
   @@index([spaceId], map: "Member_spaceId_fkey")
@@ -61,7 +63,7 @@ model Space {
   description    String?
   personal       Boolean         @default(false)
   created        DateTime        @default(now())
-  updated        DateTime        @default(now())
+  updated        DateTime        @updatedAt
   members        Member[]
   questionnaires Questionnaire[]
 }
@@ -72,17 +74,30 @@ model Questionnaire {
   description       String?    @db.Text
   category          Int        @default(1)
   url               String?
-  status            String     @default("paused")
+  status            QuestionnaireStatus     @default(ACTIVE)
   timeLimit         Int?
   allowReturn       Boolean    @default(true)
-  structure         String     @default("list")
+  structure         QuestionnaireStructure  @default(LIST)
   passwordProtected Boolean    @default(false)
   password          String?
   spaceId           Int
   created           DateTime   @default(now())
-  updated           DateTime   @default(now())
+  updated           DateTime   @updatedAt
   space             Space      @relation(fields: [spaceId], references: [id], onDelete: Cascade)
   questions         Question[]
+  published         PublishedQuestionnaire[]
+
+  @@index([spaceId])
+}
+
+enum QuestionnaireStructure {
+  INDIVIDUAL
+  LIST
+}
+
+enum QuestionnaireStatus {
+  ACTIVE
+  PAUSED
 }
 
 model Question {
@@ -93,9 +108,10 @@ model Question {
   required        Boolean       @default(false)
   timeLimit       Int?
   position        Float         @default(0)
-  type            String        @default("text")
+  type            QuestionType  @default(TEXT)
   created         DateTime      @default(now())
-  updated         DateTime      @default(now())
+  updated         DateTime      @updatedAt
+  deleted Boolean @default(false)
   questionnaireId Int
   questionnaire   Questionnaire @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
   options         Option[]
@@ -103,14 +119,35 @@ model Question {
   @@unique([questionnaireId, position])
 }
 
+enum QuestionType {
+  TEXT
+  SELECT
+  MULTI_SELECT
+}
+
 model Option {
   id         Int      @id @default(autoincrement())
   value      String   @default("New Option")
   created    DateTime @default(now())
-  updated    DateTime @default(now())
+  updated    DateTime @updatedAt
   position   Float    @default(0)
   questionId Int
   question  Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   @@unique([questionId, position])
+}
+
+model PublishedQuestionnaire {
+  id  Int  @id @default(autoincrement())
+  questionnaireId Int
+  questionnaire   Questionnaire @relation(fields: [questionnaireId], references: [id])
+  name String
+  version String @default("v0.0.1")
+  publisherId Int
+  publisher  Member   @relation(fields: [publisherId], references: [id])
+  publishedAt DateTime @default(now())
+  data    Json
+
+  @@index([publisherId])
+  @@index([questionnaireId])
 }
