@@ -15,6 +15,9 @@ import {
   UpdateQuestionTypeDto,
 } from './question.dto';
 import { QuestionType } from '@prisma/client';
+import * as dayjs from 'dayjs';
+import * as utc from 'dayjs/plugin/utc';
+dayjs.extend(utc);
 
 const positionDelta = 10;
 
@@ -246,6 +249,11 @@ export class QuestionService {
       },
       data: {
         value: data.value,
+        question: {
+          update: {
+            updated: dayjs.utc().format(),
+          }
+        }
       },
       select: {
         question: {
@@ -258,9 +266,17 @@ export class QuestionService {
   }
 
   async deleteOption(optionId: number): Promise<Question | null> {
-    const option = await this.prisma.option.delete({
+    const option = await this.prisma.option.update({
       where: {
         id: optionId,
+      },
+      data: {
+        deleted: true,
+        question: {
+          update: {
+            updated: dayjs.utc().format()
+          }
+        }
       },
       select: {
         question: {
@@ -319,12 +335,19 @@ export class QuestionService {
     const position = (firstPosition + secondPosition) / 2;
     const id = options[activeIndex].id;
 
+    const time = dayjs.utc().format();
+
     const option = await this.prisma.option.update({
       where: {
         id,
       },
       data: {
         position,
+        question: {
+          update: {
+            updated: time,
+          }
+        }
       },
       select: {
         question: {
@@ -409,6 +432,9 @@ export class QuestionService {
             value: true,
             position: true,
           },
+          where: {
+            deleted: false,
+          }
         },
       },
     });

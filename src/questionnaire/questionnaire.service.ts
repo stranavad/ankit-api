@@ -28,6 +28,8 @@ import {
   selectApplicationSpace,
 } from '../space/space.interface';
 import { QuestionnaireStatus, QuestionnaireStructure } from '@prisma/client';
+import * as bcrypt from 'bcrypt'
+import bcryptConfig from '../bcrypt';
 
 @Injectable()
 export class QuestionnaireService {
@@ -261,20 +263,17 @@ export class QuestionnaireService {
       },
     );
     // Password
-    this.checkPerms(
-      data.passwordProtected,
-      UpdateQuestionnairePermission.PASSWORD,
-      role,
-      () => {
-        if (data.password !== null && data.passwordProtected) {
+    if(data.passwordProtected !== null){
+      if(this.authService.isRoleEnough(updateQuestionnairePermissions[UpdateQuestionnairePermission.PASSWORD], role)){
+        if (data.password && data.passwordProtected) {
           questionnaireUpdateData.passwordProtected = true;
-          questionnaireUpdateData.password = data.password;
+          questionnaireUpdateData.password = await bcrypt.hash(data.password, bcryptConfig.saltRounds);
         } else {
           questionnaireUpdateData.passwordProtected = false;
           questionnaireUpdateData.password = null;
         }
-      },
-    );
+      }
+    }
 
     const questionnaire = await this.prisma.questionnaire.update({
       where: {
