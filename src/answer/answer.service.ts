@@ -43,11 +43,10 @@ export class AnswerService {
                   );;
             }
 
-            console.log(data);
 
             // User did not send any password
             if(!data.password){
-                return {password: true}
+                return false
                 // throw new HttpException(
                 //     {
                 //       status: HttpStatus.FORBIDDEN,
@@ -59,7 +58,7 @@ export class AnswerService {
 
             // Checking user's password
             if(!(await bcrypt.compare(data.password, questionnaire.password))){
-                return {password: true}
+                return false
                 // throw new HttpException(
                 //     {
                 //       status: HttpStatus.FORBIDDEN,
