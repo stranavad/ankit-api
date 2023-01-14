@@ -11,8 +11,7 @@ export interface AnswerQuestion {
 }
 
 export interface AnswerOption {
-    id: number;
-    publishedId: number;
+    optionId: number;
     value: string;
 }
 

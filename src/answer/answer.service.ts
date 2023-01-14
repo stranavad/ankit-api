@@ -47,24 +47,26 @@ export class AnswerService {
 
             // User did not send any password
             if(!data.password){
-                throw new HttpException(
-                    {
-                      status: HttpStatus.FORBIDDEN,
-                      error: 'Wrong password',
-                    },
-                    HttpStatus.FORBIDDEN,
-                  );;
+                return {password: true}
+                // throw new HttpException(
+                //     {
+                //       status: HttpStatus.FORBIDDEN,
+                //       error: 'Wrong password',
+                //     },
+                //     HttpStatus.FORBIDDEN,
+                //   );;
             }
 
             // Checking user's password
             if(!(await bcrypt.compare(data.password, questionnaire.password))){
-                throw new HttpException(
-                    {
-                      status: HttpStatus.FORBIDDEN,
-                      error: 'Wrong password',
-                    },
-                    HttpStatus.FORBIDDEN,
-                  );;
+                return {password: true}
+                // throw new HttpException(
+                //     {
+                //       status: HttpStatus.FORBIDDEN,
+                //       error: 'Wrong password',
+                //     },
+                //     HttpStatus.FORBIDDEN,
+                //   );;
             }
         }
 
