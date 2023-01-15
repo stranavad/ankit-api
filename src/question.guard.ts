@@ -1,6 +1,7 @@
 import {
     CanActivate,
     ExecutionContext,
+    HttpException,
     Inject,
     Injectable,
   } from '@nestjs/common';
@@ -29,7 +30,13 @@ import {
       const questionId = Number(request.params.questionId) || null;
   
       if (!jwtPayload || !questionnaireId || !questionId) {
-        return false;
+        throw new HttpException(
+          {
+            status: 420,
+            error: 'Not logged in',
+          },
+          420,
+        );
       }
   
       const memberAuth = await this.authService.authenticateQuestionRoute(
@@ -39,7 +46,13 @@ import {
       );
   
       if (!memberAuth) {
-        return false;
+        throw new HttpException(
+          {
+            status: 420,
+            error: 'Not logged in',
+          },
+          420,
+        );
       }
   
       // From request
