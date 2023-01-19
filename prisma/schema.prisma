@@ -68,24 +68,26 @@ model Space {
 }
 
 model Questionnaire {
-  id                 Int                      @id @default(autoincrement())
-  name               String                   @default("New Questionnaire")
-  description        String?                  @db.Text
-  category           Int                      @default(1)
-  url                String?
-  status             QuestionnaireStatus      @default(ACTIVE)
-  timeLimit          Int?
-  allowReturn        Boolean                  @default(true)
-  structure          QuestionnaireStructure   @default(LIST)
-  passwordProtected  Boolean                  @default(false)
-  password           String?                  @db.Char(60)
-  spaceId            Int
-  created            DateTime                 @default(now())
-  updated            DateTime                 @updatedAt
-  space              Space                    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
-  questions          Question[]
-  published          PublishedQuestionnaire[]
-  publishedQuestions PublishedQuestion[]
+  id                  Int                      @id @default(autoincrement())
+  name                String                   @default("New Questionnaire")
+  description         String?                  @db.Text
+  category            Int                      @default(1)
+  url                 String?
+  status              QuestionnaireStatus      @default(ACTIVE)
+  timeLimit           Int?
+  allowReturn         Boolean                  @default(true)
+  structure           QuestionnaireStructure   @default(LIST)
+  passwordProtected   Boolean                  @default(false)
+  password            String?                  @db.Char(60)
+  spaceId             Int
+  created             DateTime                 @default(now())
+  updated             DateTime                 @updatedAt
+  space               Space                    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  questions           Question[]
+  published           PublishedQuestionnaire[]
+  publishedQuestions  PublishedQuestion[]
+  questionsAnswers    QuestionAnswer[]
+  QuestionnaireAnswer QuestionnaireAnswer[]
 
   @@index([spaceId])
 }
@@ -116,6 +118,7 @@ model Question {
   questionnaire   Questionnaire       @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
   options         Option[]
   published       PublishedQuestion[]
+  answers         QuestionAnswer[]
 
   @@unique([questionnaireId, position])
 }
@@ -136,6 +139,7 @@ model Option {
   questionId Int
   question   Question          @relation(fields: [questionId], references: [id], onDelete: Cascade)
   published  PublishedOption[]
+  answers   QuestionAnswer[]
 
   @@unique([questionId, position])
 }
@@ -186,7 +190,38 @@ model PublishedQuestionnaire {
   publishedAt     DateTime      @default(now())
 
   questions PublishedQuestion[]
+  answers   QuestionnaireAnswer[]
 
   @@index([publisherId])
   @@index([questionnaireId])
+}
+
+model QuestionAnswer {
+  id                    Int                 @id @default(autoincrement())
+  questionId            Int
+  question              Question            @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionnaireId       Int
+  questionnaire         Questionnaire       @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
+  questionnaireAnswerId Int
+  questionnaireAnswer   QuestionnaireAnswer @relation(fields: [questionnaireAnswerId], references: [id], onDelete: Cascade)
+  answeredAt            DateTime            @default(now())
+  value String?
+  options Option[]
+
+  @@index([questionId])
+  @@index([questionnaireId])
+  @@index([questionnaireAnswerId])
+}
+
+model QuestionnaireAnswer {
+  id                       Int                     @id @default(autoincrement())
+  questionnaireId          Int
+  questionnaire            Questionnaire           @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
+  publishedQuestionnaireId Int?
+  publishedQuestionnaire   PublishedQuestionnaire? @relation(fields: [publishedQuestionnaireId], references: [id], onDelete: NoAction)
+  answers                  QuestionAnswer[]
+  answeredAt               DateTime                @default(now())
+
+  @@index([questionnaireId])
+  @@index([publishedQuestionnaireId])
 }

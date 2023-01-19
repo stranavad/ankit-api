@@ -1,5 +1,5 @@
 import { QuestionnaireStatus, QuestionnaireStructure } from '@prisma/client';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateQuestionnaireDto {
   @IsString()
@@ -12,11 +12,13 @@ export class UpdateQuestionnaireDto {
   name?: string | null = null;
   // @IsString()
   description?: string | null = null;
-  // @IsEnum(Structure)
+  @IsEnum(QuestionnaireStructure)
+  @IsOptional()
   structure?: QuestionnaireStructure | string | null = null;
   // @IsNumber()
   category?: number | null = null;
-  // @IsEnum(Status)
+  @IsEnum(QuestionnaireStatus)
+  @IsOptional()
   status?: QuestionnaireStatus | string | null = null;
   // @IsNumber()
   timeLimit?: number | null = null;
