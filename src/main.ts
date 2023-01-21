@@ -19,6 +19,6 @@ async function bootstrap() {
     methods: 'GET, PUT, POST, DELETE, OPTIONS',
     allowedHeaders: 'Content-Type, Authorization, UserID',
   });
-  await app.listen(3001);
+  await app.listen(3001, '0.0.0.0');
 }
 bootstrap().then(() => console.log('API Running'));
