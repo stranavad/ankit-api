@@ -9,16 +9,21 @@ export const selectQuestion = Prisma.validator<Prisma.QuestionSelect>()({
   required: true,
   position: true,
   deleted: true,
+  updated: true,
   type: true,
   options: {
     select: {
       id: true,
       value: true,
       position: true,
+      deleted: true,
     },
     orderBy: {
       position: 'asc',
     },
+    where: {
+      deleted: false,
+    }
   },
 });
 
@@ -68,10 +73,12 @@ export interface Question {
   deleted: boolean;
   type: QuestionType;
   options?: Option[];
+  updated: Date;
 }
 
 export interface Option {
   id: number;
   value: string;
   position: number;
+  deleted: boolean;
 }

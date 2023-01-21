@@ -67,7 +67,7 @@ CREATE TABLE `Questionnaire` (
     `allowReturn` BOOLEAN NOT NULL DEFAULT true,
     `structure` ENUM('INDIVIDUAL', 'LIST') NOT NULL DEFAULT 'LIST',
     `passwordProtected` BOOLEAN NOT NULL DEFAULT false,
-    `password` VARCHAR(191) NULL,
+    `password` CHAR(60) NULL,
     `spaceId` INTEGER NOT NULL,
     `created` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated` DATETIME(3) NOT NULL,
@@ -84,7 +84,7 @@ CREATE TABLE `Question` (
     `visible` BOOLEAN NOT NULL DEFAULT true,
     `required` BOOLEAN NOT NULL DEFAULT false,
     `timeLimit` INTEGER NULL,
-    `position` DOUBLE NOT NULL DEFAULT 0,
+    `position` DOUBLE NOT NULL DEFAULT 10,
     `type` ENUM('TEXT', 'SELECT', 'MULTI_SELECT') NOT NULL DEFAULT 'TEXT',
     `created` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated` DATETIME(3) NOT NULL,
@@ -101,10 +101,44 @@ CREATE TABLE `Option` (
     `value` VARCHAR(191) NOT NULL DEFAULT 'New Option',
     `created` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated` DATETIME(3) NOT NULL,
-    `position` DOUBLE NOT NULL DEFAULT 0,
+    `position` DOUBLE NOT NULL DEFAULT 10,
+    `deleted` BOOLEAN NOT NULL DEFAULT false,
     `questionId` INTEGER NOT NULL,
 
     UNIQUE INDEX `Option_questionId_position_key`(`questionId`, `position`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `PublishedOption` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `optionId` INTEGER NOT NULL,
+    `value` VARCHAR(191) NOT NULL,
+    `position` INTEGER NOT NULL,
+    `questionId` INTEGER NOT NULL,
+    `deleted` BOOLEAN NOT NULL,
+
+    INDEX `PublishedOption_questionId_idx`(`questionId`),
+    INDEX `PublishedOption_optionId_idx`(`optionId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `PublishedQuestion` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `questionId` INTEGER NOT NULL,
+    `title` VARCHAR(191) NOT NULL,
+    `description` TEXT NULL,
+    `visible` BOOLEAN NOT NULL,
+    `required` BOOLEAN NOT NULL,
+    `deleted` BOOLEAN NOT NULL,
+    `position` DOUBLE NOT NULL,
+    `type` ENUM('TEXT', 'SELECT', 'MULTI_SELECT') NOT NULL,
+    `publishedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `questionnaireId` INTEGER NOT NULL,
+
+    INDEX `PublishedQuestion_questionId_idx`(`questionId`),
+    INDEX `PublishedQuestion_questionnaireId_idx`(`questionnaireId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -116,9 +150,17 @@ CREATE TABLE `PublishedQuestionnaire` (
     `version` VARCHAR(191) NOT NULL DEFAULT 'v0.0.1',
     `publisherId` INTEGER NOT NULL,
     `publishedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `data` JSON NOT NULL,
 
     INDEX `PublishedQuestionnaire_publisherId_idx`(`publisherId`),
     INDEX `PublishedQuestionnaire_questionnaireId_idx`(`questionnaireId`),
     PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `_PublishedQuestionToPublishedQuestionnaire` (
+    `A` INTEGER NOT NULL,
+    `B` INTEGER NOT NULL,
+
+    UNIQUE INDEX `_PublishedQuestionToPublishedQuestionnaire_AB_unique`(`A`, `B`),
+    INDEX `_PublishedQuestionToPublishedQuestionnaire_B_index`(`B`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

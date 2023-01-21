@@ -1,6 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  HttpException,
   Inject,
   Injectable,
 } from '@nestjs/common';
@@ -26,7 +27,13 @@ export class AuthGuard implements CanActivate {
     );
 
     if (!jwtPayload) {
-      return false;
+      throw new HttpException(
+        {
+          status: 420,
+          error: 'Not logged in',
+        },
+        420,
+      );
     }
 
     request['userId'] = jwtPayload.id;

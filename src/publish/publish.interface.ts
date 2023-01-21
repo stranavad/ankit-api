@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Option, Prisma, Question } from "@prisma/client";
 
 export interface PublishedQuestionnaire {
     id: number;
@@ -25,3 +25,30 @@ export const selectPublishedQuestionnaire = Prisma.validator<Prisma.PublishedQue
         }
     }
   });
+
+export interface QuestionToPublish extends Pick<Question, 'id' | 'title' | 'description' | 'updated' | 'visible' | 'required' | 'deleted' |
+'position' | 'type'>{
+    options: Pick<Option, 'id' | 'value'  | 'deleted'>[]
+}
+
+export const selectQuestionsToPublish = Prisma.validator<Prisma.QuestionSelect>()({
+    id: true,
+    title: true,
+    description: true,
+    updated: true,
+    visible: true,
+    required: true,
+    deleted: true,
+    position: true,
+    type: true,
+    options: {
+        select: {
+            id: true,
+            value: true,
+            deleted: true,
+        },
+        orderBy: {
+            position: 'asc'
+        }
+    }
+})

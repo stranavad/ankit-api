@@ -22,6 +22,13 @@ export class PublishController {
         return this.publishService.loadPublishedQuestionnaires(questionnaireId);
     }
 
+    @Get('status')
+    @UseGuards(QuestionnaireGuard)
+    @Roles(RoleType.EDIT)
+    checkQuestionnairePublish(@QuestionnaireId() questionnaireId: number): Promise<{lastPublished: Date | null, canPublish: boolean}>{
+        return this.publishService.checkQuestionnairePublish(questionnaireId);
+    }
+
     @Get(':publishedId')
     @UseGuards(PublishGuard)
     @Roles(RoleType.EDIT)
@@ -46,7 +53,7 @@ export class PublishController {
     @Post()
     @UseGuards(QuestionnaireGuard)
     @Roles(RoleType.EDIT)
-    publishQuestionnaire(@QuestionnaireId() questionnaireId: number, @MemberId() memberId: number, @Body() body: UpdatePublishedQuestionnaireDto){
+    publishQuestionnaire(@Param('id') questionnaireId: number, @MemberId() memberId: number, @Body() body: UpdatePublishedQuestionnaireDto){
         return this.publishService.publishQuestionnaire(questionnaireId, memberId, body);
     }
 }

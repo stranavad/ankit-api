@@ -1,6 +1,8 @@
 import {
   CanActivate,
   ExecutionContext,
+  HttpException,
+  HttpStatus,
   Inject,
   Injectable,
 } from '@nestjs/common';
@@ -30,7 +32,13 @@ export class RolesGuard implements CanActivate {
     const spaceId = Number(request.params.id) || null;
 
     if (!jwtPayload || !spaceId) {
-      return false;
+      throw new HttpException(
+        {
+          status: 420,
+          error: 'Not logged in',
+        },
+        420,
+      );
     }
 
     const memberAuth = await this.authService.authenticateSpaceRoute(
@@ -39,7 +47,13 @@ export class RolesGuard implements CanActivate {
     );
 
     if (!memberAuth) {
-      return false;
+      throw new HttpException(
+        {
+          status: 420,
+          error: 'Not logged in',
+        },
+        420,
+      );
     }
 
     request['userId'] = jwtPayload.id;

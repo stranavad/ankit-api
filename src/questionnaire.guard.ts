@@ -1,6 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  HttpException,
   Inject,
   Injectable,
 } from '@nestjs/common';
@@ -28,7 +29,13 @@ export class QuestionnaireGuard implements CanActivate {
     const questionnaireId = Number(request.params.id) || null;
 
     if (!jwtPayload || !questionnaireId) {
-      return false;
+      throw new HttpException(
+        {
+          status: 420,
+          error: 'Not logged in',
+        },
+        420,
+      );
     }
 
     const memberAuth = await this.authService.authenticateQuestionnaireRoute(
@@ -37,7 +44,13 @@ export class QuestionnaireGuard implements CanActivate {
     );
 
     if (!memberAuth) {
-      return false;
+      throw new HttpException(
+        {
+          status: 420,
+          error: 'Not logged in',
+        },
+        420,
+      );
     }
 
     // From request

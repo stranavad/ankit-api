@@ -3,24 +3,23 @@ generator client {
 }
 
 generator js {
-  provider        = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider     = "mysql"
-  url          = env("DATABASE_URL")
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
-  relationMode = "prisma"
+  relationMode      = "prisma"
 }
 
-
 model User {
-  id            Int       @id @default(autoincrement())
-  name          String
-  email         String    @unique
-  image         String?
-  accounts      Account[]
-  members       Member[]
+  id       Int       @id @default(autoincrement())
+  name     String
+  email    String    @unique
+  image    String?
+  accounts Account[]
+  members  Member[]
 }
 
 model Account {
@@ -39,17 +38,17 @@ model Account {
 }
 
 model Member {
-  id       Int      @id @default(autoincrement())
-  name     String
-  role     String
-  accepted Boolean  @default(false)
-  spaceId  Int
-  created  DateTime @default(now())
-  updated  DateTime @updatedAt
-  deleted  Boolean  @default(false)
-  userId   Int
-  space    Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        Int                      @id @default(autoincrement())
+  name      String
+  role      String
+  accepted  Boolean                  @default(false)
+  spaceId   Int
+  created   DateTime                 @default(now())
+  updated   DateTime                 @updatedAt
+  deleted   Boolean                  @default(false)
+  userId    Int
+  space     Space                    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  user      User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   published PublishedQuestionnaire[]
 
   @@unique([userId, spaceId])
@@ -69,23 +68,26 @@ model Space {
 }
 
 model Questionnaire {
-  id                Int        @id @default(autoincrement())
-  name              String     @default("New Questionnaire")
-  description       String?    @db.Text
-  category          Int        @default(1)
-  url               String?
-  status            QuestionnaireStatus     @default(ACTIVE)
-  timeLimit         Int?
-  allowReturn       Boolean    @default(true)
-  structure         QuestionnaireStructure  @default(LIST)
-  passwordProtected Boolean    @default(false)
-  password          String?
-  spaceId           Int
-  created           DateTime   @default(now())
-  updated           DateTime   @updatedAt
-  space             Space      @relation(fields: [spaceId], references: [id], onDelete: Cascade)
-  questions         Question[]
-  published         PublishedQuestionnaire[]
+  id                  Int                      @id @default(autoincrement())
+  name                String                   @default("New Questionnaire")
+  description         String?                  @db.Text
+  category            Int                      @default(1)
+  url                 String?
+  status              QuestionnaireStatus      @default(ACTIVE)
+  timeLimit           Int?
+  allowReturn         Boolean                  @default(true)
+  structure           QuestionnaireStructure   @default(LIST)
+  passwordProtected   Boolean                  @default(false)
+  password            String?                  @db.Char(60)
+  spaceId             Int
+  created             DateTime                 @default(now())
+  updated             DateTime                 @updatedAt
+  space               Space                    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  questions           Question[]
+  published           PublishedQuestionnaire[]
+  publishedQuestions  PublishedQuestion[]
+  questionsAnswers    QuestionAnswer[]
+  QuestionnaireAnswer QuestionnaireAnswer[]
 
   @@index([spaceId])
 }
@@ -101,20 +103,22 @@ enum QuestionnaireStatus {
 }
 
 model Question {
-  id              Int           @id @default(autoincrement())
-  title           String        @default("New question")
-  description     String?       @db.Text
-  visible         Boolean       @default(true)
-  required        Boolean       @default(false)
-  timeLimit       Int?
-  position        Float         @default(0)
-  type            QuestionType  @default(TEXT)
-  created         DateTime      @default(now())
-  updated         DateTime      @updatedAt
-  deleted Boolean @default(false)
+  id              Int                 @id @default(autoincrement())
+  title           String              @default("New question")
+  description     String?             @db.Text
+  visible         Boolean             @default(true)
+  required        Boolean             @default(false)
+  timeLimit       Int? // Time limit is shit at the moment
+  position        Float               @default(10)
+  type            QuestionType        @default(TEXT)
+  created         DateTime            @default(now())
+  updated         DateTime            @updatedAt
+  deleted         Boolean             @default(false)
   questionnaireId Int
-  questionnaire   Questionnaire @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
+  questionnaire   Questionnaire       @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
   options         Option[]
+  published       PublishedQuestion[]
+  answers         QuestionAnswer[]
 
   @@unique([questionnaireId, position])
 }
@@ -126,28 +130,98 @@ enum QuestionType {
 }
 
 model Option {
-  id         Int      @id @default(autoincrement())
-  value      String   @default("New Option")
-  created    DateTime @default(now())
-  updated    DateTime @updatedAt
-  position   Float    @default(0)
+  id         Int               @id @default(autoincrement())
+  value      String            @default("New Option")
+  created    DateTime          @default(now())
+  updated    DateTime          @updatedAt
+  position   Float             @default(10)
+  deleted    Boolean           @default(false)
   questionId Int
-  question  Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  question   Question          @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  published  PublishedOption[]
+  answers   QuestionAnswer[]
 
   @@unique([questionId, position])
 }
 
+model PublishedOption {
+  id         Int               @id @default(autoincrement())
+  optionId   Int
+  option     Option            @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  value      String
+  position   Int // This is recalculated at insert time
+  questionId Int
+  question   PublishedQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  deleted    Boolean
+
+  @@index([questionId])
+  @@index([optionId])
+}
+
+model PublishedQuestion {
+  id                      Int                      @id @default(autoincrement())
+  questionId              Int
+  question                Question                 @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  title                   String
+  description             String?                  @db.Text
+  visible                 Boolean
+  required                Boolean
+  deleted                 Boolean
+  position                Float
+  type                    QuestionType
+  publishedAt             DateTime                 @default(now())
+  questionnaireId         Int
+  questionnaire           Questionnaire            @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
+  options                 PublishedOption[]
+  publishedQuestionnaires PublishedQuestionnaire[]
+
+  @@index([questionId])
+  @@index([questionnaireId])
+}
+
 model PublishedQuestionnaire {
-  id  Int  @id @default(autoincrement())
+  id              Int           @id @default(autoincrement())
   questionnaireId Int
   questionnaire   Questionnaire @relation(fields: [questionnaireId], references: [id])
-  name String
-  version String @default("v0.0.1")
-  publisherId Int
-  publisher  Member   @relation(fields: [publisherId], references: [id])
-  publishedAt DateTime @default(now())
-  data    Json
+  name            String
+  version         String        @default("v0.0.1")
+  publisherId     Int
+  publisher       Member        @relation(fields: [publisherId], references: [id])
+  publishedAt     DateTime      @default(now())
+
+  questions PublishedQuestion[]
+  answers   QuestionnaireAnswer[]
 
   @@index([publisherId])
   @@index([questionnaireId])
+}
+
+model QuestionAnswer {
+  id                    Int                 @id @default(autoincrement())
+  questionId            Int
+  question              Question            @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionnaireId       Int
+  questionnaire         Questionnaire       @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
+  questionnaireAnswerId Int
+  questionnaireAnswer   QuestionnaireAnswer @relation(fields: [questionnaireAnswerId], references: [id], onDelete: Cascade)
+  answeredAt            DateTime            @default(now())
+  value String?
+  options Option[]
+
+  @@index([questionId])
+  @@index([questionnaireId])
+  @@index([questionnaireAnswerId])
+}
+
+model QuestionnaireAnswer {
+  id                       Int                     @id @default(autoincrement())
+  questionnaireId          Int
+  questionnaire            Questionnaire           @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
+  publishedQuestionnaireId Int?
+  publishedQuestionnaire   PublishedQuestionnaire? @relation(fields: [publishedQuestionnaireId], references: [id], onDelete: NoAction)
+  answers                  QuestionAnswer[]
+  answeredAt               DateTime                @default(now())
+
+  @@index([questionnaireId])
+  @@index([publishedQuestionnaireId])
 }
