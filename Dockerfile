@@ -9,4 +9,6 @@ RUN npm ci
 RUN npm run build 
 USER node
 
+EXPOSE 3001
+
 CMD ["npm", "run", "start:prod"]

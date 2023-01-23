@@ -3,7 +3,7 @@ import { PrismaService } from 'src/prisma.service';
 import { LoadQuestionsDto } from './answer.dto';
 import { selectAnswerQuestion } from './answer.interface';
 import * as bcrypt from 'bcrypt';
-import { QuestionType } from '@prisma/client';
+import { QuestionnaireStatus, QuestionType } from '@prisma/client';
 
 export interface AnswerQuestionnaireDto {
     questionnaireId: number;
@@ -60,11 +60,12 @@ export class AnswerService {
                         id: data.publishedQuestionnaireId
                     }
                 },
+                status: true,
             }
         });
 
-        if(!questionnaire || !questionnaire.published[0]){
-            return null;
+        if(!questionnaire || !questionnaire.published[0] || questionnaire.status !== QuestionnaireStatus.ACTIVE){
+            return {status: questionnaire?.status, publishedExists: !!questionnaire?.published[0]};
         }
 
         const publishedQuestionnaire = questionnaire.published[0];
@@ -175,6 +176,7 @@ export class AnswerService {
                 id: questionnaireId,
             },
             select: {
+                status: true,
                 passwordProtected: true,
                 password: true,
             }
@@ -190,6 +192,17 @@ export class AnswerService {
                 HttpStatus.NOT_FOUND,
               );
         }
+
+        if(questionnaire.status !== QuestionnaireStatus.ACTIVE){
+            throw new HttpException(
+                {
+                    status: 469,
+                    error: 'Status is not active',
+                },
+                469
+            )
+        }
+
         // Questionnaire has password set up
         if(questionnaire.passwordProtected){
             // PasswordProtected is true, but there is not any hash
