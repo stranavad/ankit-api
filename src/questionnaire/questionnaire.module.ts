@@ -6,7 +6,6 @@ import {
 } from './questionnaire.controller';
 import { PrismaService } from '../prisma.service';
 import { AccountService } from '../account/account.service';
-import { AuthService } from '../auth/auth.service';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
