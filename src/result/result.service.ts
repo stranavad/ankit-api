@@ -1,36 +1,195 @@
 import { Injectable } from '@nestjs/common';
+import * as dayjs from 'dayjs';
 import { PrismaService } from 'src/prisma.service';
+import * as customParseFormat from 'dayjs/plugin/customParseFormat'
+import { QuestionType } from '@prisma/client';
+import { QuestionnaireStatistics, Result } from './result.interface';
+dayjs.extend(customParseFormat)
+
 
 @Injectable()
 export class ResultService {
-    constructor(private prisma: PrismaService){
-    }
+    constructor(private prisma: PrismaService){}
 
-    async getAllResults(questionnaireId: number){
-        const questionnaire = await this.prisma.questionnaire.findUnique({
+    async deleteAnswer(answerId: number, questionId: number): Promise<Result>{
+        const question = await this.prisma.question.update({
             where: {
-                id: questionnaireId,
+                id: questionId,
+            },
+            data: {
+                answers: {
+                    delete: {
+                        id: answerId
+                    }
+                }
             },
             select: {
-                questions: {
+                id: true,
+                title: true,
+                required: true,
+                type: true,
+                answers: {
                     select: {
-                        title: true,
-                        answers: {
-                            select: {
-                                questionnaireAnswerId: true,
-                                value: true,
-                                options: {
-                                    select: {
-                                        id: true,
-                                        value: true,
-                                    }
-                                }
-                            }
+                        id: true,
+                        value: true,
+                        answeredAt: true,
+                        questionnaireAnswerId: true,
+                    },
+                    where: {
+                        value:{
+                            not: null,
                         }
-                    }
+                    },
+                    orderBy: {
+                        answeredAt: 'desc'
+                    },
                 }
             }
         })
-        return questionnaire;
+
+        const questionData = {
+            id: question.id,
+            title: question.title,
+            type: question.type,
+            required: question.required,
+        }
+
+        return { question: questionData, chart: null, data: question.answers };
+    }
+
+    async getAllResults(questionnaireId: number){
+        const questions = await this.prisma.question.findMany({
+            where: {
+                AND: [
+                    {
+                        questionnaireId,
+                    },
+                    {
+                        deleted: false,
+                    },
+                    { 
+                        visible: true
+                    }
+                ],
+            },
+            select: {
+                id: true,
+                title: true,
+                required: true,
+                type: true,
+                options: {
+                    select: {
+                        id: true,
+                        value: true,
+                        _count: {
+                            select: {answers: true}
+                        }
+                    },
+                    orderBy: {
+                        position: 'asc',
+                    },
+                    where: {
+                        deleted: false,
+                    }
+                },
+                answers: {
+                    select: {
+                        id: true,
+                        value: true,
+                        answeredAt: true,
+                        questionnaireAnswerId: true,
+                    },
+                    where: {
+                        value:{
+                            not: null,
+                        }
+                    },
+                    orderBy: {
+                        answeredAt: 'desc'
+                    },
+                }
+            }
+        });
+
+        const questionData: Result[] = questions.map((question) => {
+            const questionData = {
+                id: question.id,
+                title: question.title,
+                type: question.type,
+                required: question.required,
+            }
+
+            if(question.type === QuestionType.TEXT){
+                return {question: questionData, data: question.answers, chart: null};
+            };
+            
+            const labels: string[] = [];
+            const data: number[] = [];
+
+            question?.options.map((option) => {
+                labels.push(option.value);
+                data.push(option._count.answers);
+            })
+
+            const chart = {
+                labels,
+                datasets: [{
+                    label: 'Reponse count',
+                    data,
+                }]
+            };
+            return {question: questionData, chart, data: null};
+        })
+        return {questions: questionData};
+    }
+
+    async getQuestionnaireStatistics(id: number): Promise<QuestionnaireStatistics | null>{
+        const questionnaire = await this.prisma.questionnaire.findUnique({
+            where: {
+                id,
+            },
+            select: {
+                questionnaireAnswer: {
+                    select: {
+                        id: true,
+                        answeredAt: true,
+                    },
+                    orderBy: {
+                        answeredAt: 'asc',
+                    },
+                    // where: {
+                    //     answeredAt: {
+                    //         gte: dayjs('25-01-2023', 'DD-MM-YYYY').toDate()
+                    //         // Or &lte or lte or nothing
+                    //     }
+                    // }
+                }
+            }
+        });
+
+        const firstDate = questionnaire?.questionnaireAnswer[0].answeredAt;
+        const lastDate = questionnaire?.questionnaireAnswer[questionnaire.questionnaireAnswer.length - 1].answeredAt;
+        const difference = dayjs(lastDate).diff(dayjs(firstDate), 'day');
+
+        const dates: {[key:string]: number} = {};
+
+        for (let i = 0; i <= difference;i++){
+            dates[dayjs(firstDate).add(i, 'day').format('D. M')] = 0
+        }
+
+        questionnaire?.questionnaireAnswer.map((answer) => {
+            const date = dayjs(answer.answeredAt).format('D. M');
+            dates[date] = (dates[date]) + 1;
+        })
+
+        const chartData = {
+            labels: Object.keys(dates),
+            datasets: [{
+                label: 'Pocet vyplneni',
+                data: Object.keys(dates).map((key) => ({x: key, y: dates[key]})),
+            }]
+        }
+
+        return chartData;
     }
 }

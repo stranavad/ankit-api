@@ -87,7 +87,7 @@ model Questionnaire {
   published           PublishedQuestionnaire[]
   publishedQuestions  PublishedQuestion[]
   questionsAnswers    QuestionAnswer[]
-  QuestionnaireAnswer QuestionnaireAnswer[]
+  questionnaireAnswer QuestionnaireAnswer[]
 
   @@index([spaceId])
 }
