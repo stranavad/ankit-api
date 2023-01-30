@@ -9,6 +9,7 @@ export const enum UpdateQuestionnairePermission {
   TIME_LIMIT = 'timeLimit',
   ALLOW_RETURN = 'allowReturn',
   PASSWORD = 'password',
+  URL = 'url',
 }
 
 export const updateQuestionnairePermissions: {
@@ -17,9 +18,10 @@ export const updateQuestionnairePermissions: {
   name: RoleType.EDIT,
   description: RoleType.EDIT,
   structure: RoleType.EDIT,
-  category: RoleType.ADMIN,
-  status: RoleType.ADMIN,
+  category: RoleType.EDIT,
+  status: RoleType.EDIT,
   timeLimit: RoleType.EDIT,
   allowReturn: RoleType.EDIT,
-  password: RoleType.ADMIN,
+  password: RoleType.EDIT,
+  url: RoleType.EDIT
 };

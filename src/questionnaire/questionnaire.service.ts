@@ -31,6 +31,18 @@ import { QuestionnaireStatus, QuestionnaireStructure } from '@prisma/client';
 import * as bcrypt from 'bcrypt'
 import bcryptConfig from '../bcrypt';
 
+const containLetters = 'abcdefghijklmnopqrstuvwxyz0123456789-';
+
+const checkValidUrl = (url: string): boolean => {
+    let valid = true;
+    url.split('').map((symbol) => {
+        if(!containLetters.includes(symbol)){
+            valid = false;
+        }
+    })
+    return valid;
+}
+
 @Injectable()
 export class QuestionnaireService {
   constructor(
@@ -262,6 +274,15 @@ export class QuestionnaireService {
         questionnaireUpdateData.allowReturn = value;
       },
     );
+    // URL
+    this.checkPerms(
+      data.url,
+      UpdateQuestionnairePermission.URL,
+      role,
+      (value) => {
+        questionnaireUpdateData.url = value ? checkValidUrl(value) ? value : undefined : undefined;
+      }
+    )
     // Password
     if(data.passwordProtected !== null){
       if(this.authService.isRoleEnough(updateQuestionnairePermissions[UpdateQuestionnairePermission.PASSWORD], role)){
@@ -308,4 +329,5 @@ interface QuestionnaireUpdateData {
   allowReturn?: boolean;
   passwordProtected?: boolean;
   password?: string | null;
+  url?: string;
 }

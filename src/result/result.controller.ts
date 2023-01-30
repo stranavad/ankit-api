@@ -4,10 +4,9 @@ import { QuestionnaireGuard } from 'src/questionnaire.guard';
 import { RoleType } from 'src/role';
 import { Roles } from 'src/roles.decorator';
 import { ResultService } from './result.service';
-import { GetQuestionnaireStatistics } from './result.dto';
 import { QuestionGuard } from 'src/question.guard';
 import { QuestionId } from 'src/question.decorator';
-import { Result } from './result.interface';
+import { QuestionnaireStatistics, Result } from './result.interface';
 
 @Controller('result/:id')
 export class ResultController {
@@ -23,7 +22,7 @@ export class ResultController {
     @Get('statistics')
     @UseGuards(QuestionnaireGuard)
     @Roles(RoleType.VIEW)
-    getQuestionnaireStatistics(@QuestionnaireId() questionnaireId: number){
+    getQuestionnaireStatistics(@QuestionnaireId() questionnaireId: number): Promise<QuestionnaireStatistics>{
         return this.resultService.getQuestionnaireStatistics(questionnaireId);
     }
 

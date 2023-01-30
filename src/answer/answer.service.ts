@@ -30,6 +30,7 @@ export class AnswerService {
                 id: questionnaireId
             },
             select: {
+                id: true,
                 published: {
                     select: {
                         id: true,
@@ -144,7 +145,7 @@ export class AnswerService {
             data: {
                 questionnaire: {
                     connect: {
-                        id: questionnaireId
+                        id: questionnaire.id,
                     }
                 },
                 publishedQuestionnaire: {
@@ -156,7 +157,7 @@ export class AnswerService {
                     // We have to use create bcs create many wouldn't connect options for us
                     create: answers.map((answer) => ({
                         questionId: answer.questionId,
-                        questionnaireId,
+                        questionnaireId: questionnaire.id,
                         value: answer.value,
                         options: {
                             connect: answer.options.map((id) => ({id}))
@@ -169,13 +170,14 @@ export class AnswerService {
         return response;
     }
 
-    async loadQuestions(questionnaireId: number, data: LoadQuestionsDto){
+    async loadQuestions(questionnaireHash: string, data: LoadQuestionsDto){
         // First we check whether questionnaire is password protected
         const questionnaire = await this.prisma.questionnaire.findUnique({
             where: {
-                id: questionnaireId,
+                url: questionnaireHash,
             },
             select: {
+                id: true,
                 status: true,
                 passwordProtected: true,
                 password: true,
@@ -245,7 +247,7 @@ export class AnswerService {
 
         const publishedQuestionnaire = await this.prisma.publishedQuestionnaire.findFirst({
             where: {
-                questionnaireId
+                questionnaireId: questionnaire.id,
             },
             orderBy: {
                 publishedAt: 'desc'
@@ -287,7 +289,7 @@ export class AnswerService {
 
         return {
             id: publishedQuestionnaire.id,
-            questionnaireId,
+            questionnaireId: questionnaire.id,
             name: publishedQuestionnaire.questionnaire.name,
             description: publishedQuestionnaire.questionnaire.description,
             structure: publishedQuestionnaire.questionnaire.structure,

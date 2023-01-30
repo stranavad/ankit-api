@@ -143,32 +143,18 @@ export class ResultService {
         return {questions: questionData};
     }
 
-    async getQuestionnaireStatistics(id: number): Promise<QuestionnaireStatistics | null>{
-        const questionnaire = await this.prisma.questionnaire.findUnique({
-            where: {
-                id,
-            },
-            select: {
-                questionnaireAnswer: {
-                    select: {
-                        id: true,
-                        answeredAt: true,
-                    },
-                    orderBy: {
-                        answeredAt: 'asc',
-                    },
-                    // where: {
-                    //     answeredAt: {
-                    //         gte: dayjs('25-01-2023', 'DD-MM-YYYY').toDate()
-                    //         // Or &lte or lte or nothing
-                    //     }
-                    // }
-                }
-            }
-        });
+    async getQuestionnaireStatistics(id: number): Promise<QuestionnaireStatistics>{
+        const result: RawStatisticsResult[] = await this.prisma.$queryRaw`SELECT COUNT(id), DATE(answeredAt) DateOnly from QuestionnaireAnswer  WHERE questionnaireId = ${id} GROUP BY DateOnly  ORDER BY DateOnly ASC`;
 
-        const firstDate = questionnaire?.questionnaireAnswer[0].answeredAt;
-        const lastDate = questionnaire?.questionnaireAnswer[questionnaire.questionnaireAnswer.length - 1].answeredAt;
+        if(!result.length){
+            return {
+                labels: [],
+                datasets: [],
+            }
+        }
+        
+        const firstDate = result[0].DateOnly;
+        const lastDate = result[result.length - 1].DateOnly;
         const difference = dayjs(lastDate).diff(dayjs(firstDate), 'day');
 
         const dates: {[key:string]: number} = {};
@@ -177,9 +163,9 @@ export class ResultService {
             dates[dayjs(firstDate).add(i, 'day').format('D. M')] = 0
         }
 
-        questionnaire?.questionnaireAnswer.map((answer) => {
-            const date = dayjs(answer.answeredAt).format('D. M');
-            dates[date] = (dates[date]) + 1;
+        result.map((answer) => {
+            const date = dayjs(answer.DateOnly).format('D. M');
+            dates[date] = Number(answer['count(id)']);
         })
 
         const chartData = {
@@ -192,4 +178,9 @@ export class ResultService {
 
         return chartData;
     }
+}
+
+interface RawStatisticsResult {
+    'count(id)': BigInt;
+    DateOnly: Date;
 }
