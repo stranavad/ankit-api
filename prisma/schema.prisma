@@ -72,7 +72,7 @@ model Questionnaire {
   name                String                   @default("New Questionnaire")
   description         String?                  @db.Text
   category            Int                      @default(1)
-  url                 String?
+  url                 String?                  @default(uuid()) @unique
   status              QuestionnaireStatus      @default(ACTIVE)
   timeLimit           Int?
   allowReturn         Boolean                  @default(true)
@@ -90,6 +90,7 @@ model Questionnaire {
   questionnaireAnswer QuestionnaireAnswer[]
 
   @@index([spaceId])
+  @@index([url])
 }
 
 enum QuestionnaireStructure {
@@ -211,6 +212,7 @@ model QuestionAnswer {
   @@index([questionId])
   @@index([questionnaireId])
   @@index([questionnaireAnswerId])
+  @@index([answeredAt])
 }
 
 model QuestionnaireAnswer {
@@ -224,4 +226,5 @@ model QuestionnaireAnswer {
 
   @@index([questionnaireId])
   @@index([publishedQuestionnaireId])
+  @@index([answeredAt])
 }
