@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma.service';
 import {
   ApplicationQuestionnaire,
   CurrentQuestionnaire,
+  DashboardQuestionnaire,
   DetailQuestionnaire,
   getApplicationQuestionnaireFromPrisma,
   getApplicationQuestionnairesFromPrisma,
@@ -126,6 +127,44 @@ export class QuestionnaireService {
       member: dataMember,
       questionnaire: dataQuestionnaire,
     };
+  }
+
+  async getDashboardQuestionnaires(userId: number): Promise<ApplicationQuestionnaire[]>{
+    const members = await this.prisma.member.findMany({
+      where: {
+        userId,
+      },
+      select: {
+        role: true,
+        space: {
+          select: {
+            name: true,
+            questionnaires: {
+              select: { 
+                ...selectApplicationQuestionnaire,
+                _count: {
+                  select: {
+                    questionnaireAnswer: true
+                  }
+                }  
+              },
+              orderBy: {
+                updated: 'desc'
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const questionnaires: DashboardQuestionnaire[] = [];
+    members.map((member) => {
+      member.space.questionnaires.map((questionnaire) => {
+        questionnaires.push({...getApplicationQuestionnaireFromPrisma(questionnaire), spaceName: member.space.name, role: parseRole(member.role), answerCount: questionnaire._count.questionnaireAnswer});
+      })
+    })
+
+    return questionnaires;
   }
 
   async getQuestionnaires(

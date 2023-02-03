@@ -62,7 +62,7 @@ CREATE TABLE `Questionnaire` (
     `description` TEXT NULL,
     `category` INTEGER NOT NULL DEFAULT 1,
     `url` VARCHAR(191) NULL,
-    `status` ENUM('ACTIVE', 'PAUSED') NOT NULL DEFAULT 'ACTIVE',
+    `status` ENUM('ACTIVE', 'PAUSED') NOT NULL DEFAULT 'PAUSED',
     `timeLimit` INTEGER NULL,
     `allowReturn` BOOLEAN NOT NULL DEFAULT true,
     `structure` ENUM('INDIVIDUAL', 'LIST') NOT NULL DEFAULT 'LIST',
@@ -72,7 +72,9 @@ CREATE TABLE `Questionnaire` (
     `created` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated` DATETIME(3) NOT NULL,
 
+    UNIQUE INDEX `Questionnaire_url_key`(`url`),
     INDEX `Questionnaire_spaceId_idx`(`spaceId`),
+    INDEX `Questionnaire_url_idx`(`url`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -154,6 +156,44 @@ CREATE TABLE `PublishedQuestionnaire` (
     INDEX `PublishedQuestionnaire_publisherId_idx`(`publisherId`),
     INDEX `PublishedQuestionnaire_questionnaireId_idx`(`questionnaireId`),
     PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `QuestionAnswer` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `questionId` INTEGER NOT NULL,
+    `questionnaireId` INTEGER NOT NULL,
+    `questionnaireAnswerId` INTEGER NOT NULL,
+    `answeredAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `value` VARCHAR(191) NULL,
+
+    INDEX `QuestionAnswer_questionId_idx`(`questionId`),
+    INDEX `QuestionAnswer_questionnaireId_idx`(`questionnaireId`),
+    INDEX `QuestionAnswer_questionnaireAnswerId_idx`(`questionnaireAnswerId`),
+    INDEX `QuestionAnswer_answeredAt_idx`(`answeredAt`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `QuestionnaireAnswer` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `questionnaireId` INTEGER NOT NULL,
+    `publishedQuestionnaireId` INTEGER NULL,
+    `answeredAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `QuestionnaireAnswer_questionnaireId_idx`(`questionnaireId`),
+    INDEX `QuestionnaireAnswer_publishedQuestionnaireId_idx`(`publishedQuestionnaireId`),
+    INDEX `QuestionnaireAnswer_answeredAt_idx`(`answeredAt`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `_OptionToQuestionAnswer` (
+    `A` INTEGER NOT NULL,
+    `B` INTEGER NOT NULL,
+
+    UNIQUE INDEX `_OptionToQuestionAnswer_AB_unique`(`A`, `B`),
+    INDEX `_OptionToQuestionAnswer_B_index`(`B`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable

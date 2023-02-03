@@ -26,6 +26,18 @@ import {
 } from './questionnaire.interface';
 import { QuestionnaireGuard } from '../questionnaire.guard';
 import { UserId } from '../user.decorator';
+import { AuthGuard } from 'src/auth.guard';
+
+@Controller('questionnaire/dashboard')
+export class DashboardQuestionnaireController {
+  constructor(private questionnaireService: QuestionnaireService){}
+
+  @Get()
+  @UseGuards(AuthGuard)
+  getDashboardQuestionnaires(@UserId() userId: number): Promise<ApplicationQuestionnaire[]>{
+    return this.questionnaireService.getDashboardQuestionnaires(userId);
+  }
+}
 
 @Controller('questionnaire/space/:id')
 export class GeneralQuestionnaireController {
