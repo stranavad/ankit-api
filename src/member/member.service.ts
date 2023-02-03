@@ -2,13 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { ApplicationSpace, selectSimpleSpace } from '../space/space.interface';
 import {
-  AllMembersWithSpaces,
   ApplicationMember,
   getApplicationMemberFromPrismaApplicationMember,
   selectApplicationMember,
 } from './member.interface';
 import { parseRole, RoleType } from '../role';
-import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class MemberService {
@@ -90,7 +88,14 @@ export class MemberService {
   ): Promise<ApplicationSpace[] | null> {
     const members = await this.prisma.member.findMany({
       where: {
-        userId,
+        AND: [
+          {
+            userId,
+          },
+          {
+            deleted: false
+          }
+        ]
       },
       orderBy: {
         updated: 'desc',
@@ -99,8 +104,8 @@ export class MemberService {
         ...selectApplicationMember,
         space: {
           select: selectSimpleSpace
-        }
-      }
+        },
+      },
     })
     
     if (!members) {

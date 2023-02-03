@@ -85,7 +85,14 @@ export class SpaceService {
   async getPickerSpaces(userId: number): Promise<SimpleSpace[]>{
     const members = await this.prisma.member.findMany({
       where: {
-        userId
+        AND: [
+          {
+            userId,
+          },
+          {
+            deleted: false,
+          }
+        ]
       },
       select: {
         role: true,
