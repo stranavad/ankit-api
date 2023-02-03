@@ -2,6 +2,7 @@ import { Prisma, QuestionnaireStatus } from '@prisma/client';
 import { ApplicationSpace } from '../space/space.interface';
 import { ApplicationMember } from '../member/member.interface';
 import { QuestionnaireStructure } from '@prisma/client';
+import { RoleType } from 'src/role';
 
 export const parseStructure = (structure: string | undefined): QuestionnaireStructure => {
   switch (structure) {
@@ -35,6 +36,12 @@ export interface ApplicationQuestionnaire {
   url: string | null;
   status: string;
   spaceId: number;
+}
+
+export interface DashboardQuestionnaire extends ApplicationQuestionnaire {
+  spaceName: string;
+  role: RoleType;
+  answerCount: number;
 }
 
 export interface PrismaApplicationQuestionnaire {

@@ -8,6 +8,7 @@ import {
   selectApplicationSpaceWithDescription,
   selectDetailSpace,
   selectSimpleSpace,
+  SimpleSpace,
   UpdateSpaceData,
 } from './space.interface';
 import {
@@ -79,6 +80,22 @@ export class SpaceService {
       role: parseRole(space.members[0].role),
       username: space.members[0].name,
     };
+  }
+
+  async getPickerSpaces(userId: number): Promise<SimpleSpace[]>{
+    const members = await this.prisma.member.findMany({
+      where: {
+        userId
+      },
+      select: {
+        role: true,
+        space: {
+          select: selectSimpleSpace
+        }
+      }
+    });
+
+    return members.map((member) => ({...member.space, role: parseRole(member.role)}))
   }
 
   async updateSpaceMember(

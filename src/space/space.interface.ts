@@ -9,6 +9,7 @@ import {
 export interface SimpleSpace extends Pick<Space, 'id' | 'name' | 'personal'> {
   role: RoleType;
 }
+
 export const selectSimpleSpace = Prisma.validator<Prisma.SpaceSelect>()({
   id: true,
   name: true,

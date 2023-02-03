@@ -34,7 +34,7 @@ model Account {
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
-  @@index([userId], map: "Account_userId_fkey")
+  @@index([userId])
 }
 
 model Member {
@@ -73,7 +73,7 @@ model Questionnaire {
   description         String?                  @db.Text
   category            Int                      @default(1)
   url                 String?                  @default(uuid()) @unique
-  status              QuestionnaireStatus      @default(ACTIVE)
+  status              QuestionnaireStatus      @default(PAUSED)
   timeLimit           Int?
   allowReturn         Boolean                  @default(true)
   structure           QuestionnaireStructure   @default(LIST)
@@ -185,7 +185,7 @@ model PublishedQuestionnaire {
   questionnaireId Int
   questionnaire   Questionnaire @relation(fields: [questionnaireId], references: [id])
   name            String
-  version         String        @default("v0.0.1")
+  version         String        @default("v0.0.1") @db.Char(20)
   publisherId     Int
   publisher       Member        @relation(fields: [publisherId], references: [id])
   publishedAt     DateTime      @default(now())

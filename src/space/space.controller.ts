@@ -19,7 +19,6 @@ import {
   UpdateSpaceDto,
   UpdateSpaceMemberDto,
 } from './space.dto';
-import { AccountService } from '../account/account.service';
 import { SpaceService } from './space.service';
 import {
   ApplicationSpace,
@@ -39,7 +38,6 @@ import { Role } from '../role.decorator';
 export class SpaceController {
   constructor(
     private memberService: MemberService,
-    private accountService: AccountService,
     private spaceService: SpaceService,
   ) {}
 
@@ -49,6 +47,12 @@ export class SpaceController {
     @UserId() userId: number,
   ): Promise<ApplicationSpace[] | null> {
     return await this.memberService.getAllMembersWithSpaces(userId);
+  }
+
+  @Get('picker')
+  @UseGuards(AuthGuard)
+  async getPickerSpaces(@UserId() userId: number){
+    return await this.spaceService.getPickerSpaces(userId);
   }
 
   @UseGuards(RolesGuard)
