@@ -1,6 +1,7 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { JwtService } from '@nestjs/jwt';
+import { RoleType } from '../role';
 
 interface Account {
   id: number;
@@ -29,6 +30,7 @@ export class AuthController {
     private prismaService: PrismaService,
     private jwtService: JwtService,
   ) {}
+
   @Post('/login')
   async login(@Body() body: { account: Account; user: User }) {
     const { account, user } = body;
@@ -77,6 +79,57 @@ export class AuthController {
               expires_at: account.expires_at,
               token_type: account.token_type,
               id_token: account.id_token,
+            },
+          },
+          // Onboarding
+          members: {
+            create: {
+              name: 'Me',
+              accepted: true,
+              role: RoleType.OWNER,
+              space: {
+                create: {
+                  name: 'Personal space',
+                  personal: true,
+                  description: 'This is your personal space',
+                  questionnaires: {
+                    create: {
+                      name: 'Your first questionnaire',
+                      description:
+                        'This is your questionnaire, hit publish and change status to ACTIVE to start collecting your first responses',
+                      questions: {
+                        create: [
+                          {
+                            title: 'This is ordinary free text question',
+                            description:
+                              'User is allowed to enter anything he wants',
+                            position: 10,
+                          },
+                          {
+                            title: 'This is multiselect question',
+                            description:
+                              'User is allowed to select as many options as he wants',
+                            type: 'MULTI_SELECT',
+                            position: 20,
+                            options: {
+                              create: [
+                                {
+                                  position: 10,
+                                  value: 'First option',
+                                },
+                                {
+                                  position: 20,
+                                  value: 'Second option',
+                                },
+                              ],
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
             },
           },
         },

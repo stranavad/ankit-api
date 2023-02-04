@@ -4,31 +4,35 @@ import { ApplicationMember } from '../member/member.interface';
 import { QuestionnaireStructure } from '@prisma/client';
 import { RoleType } from 'src/role';
 
-export const parseStructure = (structure: string | undefined): QuestionnaireStructure => {
+export const parseStructure = (
+  structure: string | undefined,
+): QuestionnaireStructure => {
   switch (structure) {
     case QuestionnaireStructure.LIST:
-    case "list": 
+    case 'list':
       return QuestionnaireStructure.LIST;
     case QuestionnaireStructure.INDIVIDUAL:
-    case "individual":  
+    case 'individual':
       return QuestionnaireStructure.INDIVIDUAL;
     default:
       return QuestionnaireStructure.LIST;
   }
 };
 
-export const parseStatus = (status: string | undefined): QuestionnaireStatus | undefined => {
-  switch(status){
+export const parseStatus = (
+  status: string | undefined,
+): QuestionnaireStatus | undefined => {
+  switch (status) {
     case QuestionnaireStatus.ACTIVE:
-    case "active":
+    case 'active':
       return QuestionnaireStatus.ACTIVE;
     case QuestionnaireStatus.PAUSED:
-    case "paused":
-      return QuestionnaireStatus.PAUSED
-    default :
-      return undefined;      
+    case 'paused':
+      return QuestionnaireStatus.PAUSED;
+    default:
+      return undefined;
   }
-}
+};
 
 export interface ApplicationQuestionnaire {
   id: number;
@@ -91,6 +95,7 @@ export interface DetailQuestionnaire extends ApplicationQuestionnaire {
   structure: QuestionnaireStructure;
   passwordProtected: boolean;
 }
+
 export interface PrismaDetailQuestionnaire
   extends PrismaApplicationQuestionnaire {
   description: string | null;

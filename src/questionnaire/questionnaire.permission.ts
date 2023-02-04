@@ -23,5 +23,5 @@ export const updateQuestionnairePermissions: {
   timeLimit: RoleType.EDIT,
   allowReturn: RoleType.EDIT,
   password: RoleType.EDIT,
-  url: RoleType.EDIT
+  url: RoleType.EDIT,
 };

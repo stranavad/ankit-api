@@ -24,65 +24,6 @@ export class MemberService {
       : null;
   }
 
-  async createDefaultMember(userId: number) {
-    // TODO check if we can move to one simple query without multiple select
-    // maybe update returns the updated data
-    // or limit the number of returned members and spaces
-    const user = await this.prisma.user.update({
-      where: {
-        id: userId,
-      },
-      data: {
-        members: {
-          create: {
-            name: 'Me',
-            accepted: true,
-            role: RoleType.OWNER,
-            space: {
-              create: {
-                name: 'Personal space',
-                personal: true,
-                description: 'This is your personal space',
-              },
-            },
-          },
-        },
-      },
-      select: {
-        members: {
-          orderBy: {
-            created: 'desc',
-          },
-          select: {
-            id: true,
-            space: {
-              select: {
-                id: true,
-              },
-            },
-          },
-        },
-      },
-    });
-    const newSpaceId = user.members[0].space?.id;
-    const newMemberId = user.members[0]?.id;
-    if (!newSpaceId || !newMemberId) {
-      return null;
-    }
-    return this.prisma.member.update({
-      where: {
-        id: newMemberId,
-      },
-      data: {
-        space: {
-          connect: {
-            id: newSpaceId,
-          },
-        },
-      },
-    });
-  }
-
   async getAllMembersWithSpaces(
     userId: number,
   ): Promise<ApplicationSpace[] | null> {
@@ -93,9 +34,9 @@ export class MemberService {
             userId,
           },
           {
-            deleted: false
-          }
-        ]
+            deleted: false,
+          },
+        ],
       },
       orderBy: {
         updated: 'desc',
@@ -103,11 +44,11 @@ export class MemberService {
       select: {
         ...selectApplicationMember,
         space: {
-          select: selectSimpleSpace
+          select: selectSimpleSpace,
         },
       },
-    })
-    
+    });
+
     if (!members) {
       return null;
     }

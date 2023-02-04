@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import {
   ApplicationQuestionnaire,
-  CurrentQuestionnaire,
   DashboardQuestionnaire,
   DetailQuestionnaire,
   getApplicationQuestionnaireFromPrisma,
@@ -20,35 +19,29 @@ import {
   updateQuestionnairePermissions,
 } from './questionnaire.permission';
 import { AuthService } from '../auth/auth.service';
-import {
-  ApplicationMember,
-  selectApplicationMember,
-} from '../member/member.interface';
-import {
-  ApplicationSpace,
-  selectApplicationSpace,
-} from '../space/space.interface';
 import { QuestionnaireStatus, QuestionnaireStructure } from '@prisma/client';
-import * as bcrypt from 'bcrypt'
+import * as bcrypt from 'bcrypt';
 import bcryptConfig from '../bcrypt';
+import { PublishService } from '../publish/publish.service';
 
 const containLetters = 'abcdefghijklmnopqrstuvwxyz0123456789-';
 
 const checkValidUrl = (url: string): boolean => {
-    let valid = true;
-    url.split('').map((symbol) => {
-        if(!containLetters.includes(symbol)){
-            valid = false;
-        }
-    })
-    return valid;
-}
+  let valid = true;
+  url.split('').map((symbol) => {
+    if (!containLetters.includes(symbol)) {
+      valid = false;
+    }
+  });
+  return valid;
+};
 
 @Injectable()
 export class QuestionnaireService {
   constructor(
     private prisma: PrismaService,
     private authService: AuthService,
+    private publishService: PublishService,
   ) {}
 
   async getQuestionnaire(id: number): Promise<DetailQuestionnaire | null> {
@@ -63,73 +56,9 @@ export class QuestionnaireService {
       : null;
   }
 
-  async getCurrentInformation(
-    questionnaireId: number,
-    spaceId: number,
+  async getDashboardQuestionnaires(
     userId: number,
-  ): Promise<CurrentQuestionnaire | null> {
-    const space = await this.prisma.space.findUnique({
-      where: {
-        id: spaceId,
-      },
-      select: {
-        ...selectApplicationSpace,
-        questionnaires: {
-          where: {
-            id: questionnaireId,
-          },
-          select: selectApplicationQuestionnaire,
-        },
-        members: {
-          where: {
-            userId,
-          },
-          select: selectApplicationMember,
-        },
-      },
-    });
-    if (!space) {
-      return null;
-    }
-
-    const member = space.members[0];
-    const questionnaire = space.questionnaires[0];
-
-    const dataSpace: ApplicationSpace = {
-      id: space.id,
-      name: space.name,
-      personal: space.personal,
-      role: parseRole(member.role),
-      username: member.name,
-      accepted: member.accepted,
-    };
-
-    const dataMember: ApplicationMember = {
-      id: member.id,
-      name: member.name,
-      role: parseRole(member.role),
-      deleted: member.deleted,
-      accepted: member.accepted,
-      email: member.user.email,
-      image: member.user.image,
-      userId: member.user.id,
-    };
-
-    const dataQuestionnaire: ApplicationQuestionnaire = {
-      id: questionnaire.id,
-      name: questionnaire.name,
-      url: questionnaire.url,
-      status: questionnaire.status,
-      spaceId: space.id,
-    };
-    return {
-      space: dataSpace,
-      member: dataMember,
-      questionnaire: dataQuestionnaire,
-    };
-  }
-
-  async getDashboardQuestionnaires(userId: number): Promise<ApplicationQuestionnaire[]>{
+  ): Promise<ApplicationQuestionnaire[]> {
     const members = await this.prisma.member.findMany({
       where: {
         userId,
@@ -140,29 +69,34 @@ export class QuestionnaireService {
           select: {
             name: true,
             questionnaires: {
-              select: { 
+              select: {
                 ...selectApplicationQuestionnaire,
                 _count: {
                   select: {
-                    questionnaireAnswer: true
-                  }
-                }  
+                    questionnaireAnswer: true,
+                  },
+                },
               },
               orderBy: {
-                updated: 'desc'
-              }
-            }
-          }
-        }
-      }
+                updated: 'desc',
+              },
+            },
+          },
+        },
+      },
     });
 
     const questionnaires: DashboardQuestionnaire[] = [];
     members.map((member) => {
       member.space.questionnaires.map((questionnaire) => {
-        questionnaires.push({...getApplicationQuestionnaireFromPrisma(questionnaire), spaceName: member.space.name, role: parseRole(member.role), answerCount: questionnaire._count.questionnaireAnswer});
-      })
-    })
+        questionnaires.push({
+          ...getApplicationQuestionnaireFromPrisma(questionnaire),
+          spaceName: member.space.name,
+          role: parseRole(member.role),
+          answerCount: questionnaire._count.questionnaireAnswer,
+        });
+      });
+    });
 
     return questionnaires;
   }
@@ -224,7 +158,7 @@ export class QuestionnaireService {
     return getApplicationQuestionnaireFromPrisma(questionnaire);
   }
 
-  checkPerms<ValueType>(
+  async checkPerms<ValueType>(
     value: ValueType | null,
     permissions: UpdateQuestionnairePermission,
     role: RoleType,
@@ -240,7 +174,7 @@ export class QuestionnaireService {
     ) {
       return;
     }
-    callback(value);
+    await callback(value);
   }
 
   async updateQuestionnaire(
@@ -251,7 +185,7 @@ export class QuestionnaireService {
     const questionnaireUpdateData: QuestionnaireUpdateData = {};
     // Constructing update data
     // Name
-    this.checkPerms(
+    await this.checkPerms(
       data.name,
       UpdateQuestionnairePermission.NAME,
       role,
@@ -260,7 +194,7 @@ export class QuestionnaireService {
       },
     );
     // Description
-    this.checkPerms(
+    await this.checkPerms(
       data.description,
       UpdateQuestionnairePermission.DESCRIPTION,
       role,
@@ -269,7 +203,7 @@ export class QuestionnaireService {
       },
     );
     // Structure
-    this.checkPerms(
+    await this.checkPerms(
       data.structure,
       UpdateQuestionnairePermission.STRUCTURE,
       role,
@@ -278,7 +212,7 @@ export class QuestionnaireService {
       },
     );
     // Category
-    this.checkPerms(
+    await this.checkPerms(
       data.category,
       UpdateQuestionnairePermission.CATEGORY,
       role,
@@ -287,16 +221,26 @@ export class QuestionnaireService {
       },
     );
     // Status
-    this.checkPerms(
+    await this.checkPerms(
       data.status,
       UpdateQuestionnairePermission.STATUS,
       role,
-      (value) => {
-        questionnaireUpdateData.status = parseStatus(value);
+      async (value) => {
+        if (value === QuestionnaireStatus.ACTIVE) {
+          const isPublished =
+            await this.publishService.checkIsQuestionnairePublished(
+              questionnaireId,
+            );
+          if (isPublished) {
+            questionnaireUpdateData.status = parseStatus(value);
+          }
+        } else {
+          questionnaireUpdateData.status = parseStatus(value);
+        }
       },
     );
     // Time Limit
-    this.checkPerms(
+    await this.checkPerms(
       data.timeLimit,
       UpdateQuestionnairePermission.TIME_LIMIT,
       role,
@@ -305,7 +249,7 @@ export class QuestionnaireService {
       },
     );
     // Allow return
-    this.checkPerms(
+    await this.checkPerms(
       data.allowReturn,
       UpdateQuestionnairePermission.ALLOW_RETURN,
       role,
@@ -314,20 +258,34 @@ export class QuestionnaireService {
       },
     );
     // URL
-    this.checkPerms(
+    await this.checkPerms(
       data.url,
       UpdateQuestionnairePermission.URL,
       role,
       (value) => {
-        questionnaireUpdateData.url = value ? checkValidUrl(value) ? value : undefined : undefined;
-      }
-    )
+        questionnaireUpdateData.url = value
+          ? checkValidUrl(value)
+            ? value
+            : undefined
+          : undefined;
+      },
+    );
     // Password
-    if(data.passwordProtected !== null){
-      if(this.authService.isRoleEnough(updateQuestionnairePermissions[UpdateQuestionnairePermission.PASSWORD], role)){
+    if (data.passwordProtected !== null) {
+      if (
+        this.authService.isRoleEnough(
+          updateQuestionnairePermissions[
+            UpdateQuestionnairePermission.PASSWORD
+          ],
+          role,
+        )
+      ) {
         if (data.password && data.passwordProtected) {
           questionnaireUpdateData.passwordProtected = true;
-          questionnaireUpdateData.password = await bcrypt.hash(data.password, bcryptConfig.saltRounds);
+          questionnaireUpdateData.password = await bcrypt.hash(
+            data.password,
+            bcryptConfig.saltRounds,
+          );
         } else {
           questionnaireUpdateData.passwordProtected = false;
           questionnaireUpdateData.password = null;

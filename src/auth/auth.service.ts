@@ -90,7 +90,7 @@ export class AuthService {
   async authenticateQuestionRoute(
     userId: number,
     questionnaireId: number,
-    questionId: number
+    questionId: number,
   ): Promise<{ memberId: number; role: RoleType; spaceId: number } | null> {
     const questionnaire = await this.prismaService.questionnaire.findUnique({
       where: {
@@ -113,12 +113,12 @@ export class AuthService {
         },
         questions: {
           where: {
-            id: questionId
+            id: questionId,
           },
           select: {
-            id: true
-          }
-        }
+            id: true,
+          },
+        },
       },
     });
 
@@ -138,7 +138,7 @@ export class AuthService {
   async authenticatePublishRoute(
     userId: number,
     questionnaireId: number,
-    publishedId: number
+    publishedId: number,
   ): Promise<{ memberId: number; role: RoleType; spaceId: number } | null> {
     const questionnaire = await this.prismaService.questionnaire.findUnique({
       where: {
@@ -161,12 +161,12 @@ export class AuthService {
         },
         published: {
           where: {
-            id: publishedId
+            id: publishedId,
           },
           select: {
-            id: true
-          }
-        }
+            id: true,
+          },
+        },
       },
     });
 

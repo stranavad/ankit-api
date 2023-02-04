@@ -36,6 +36,7 @@ export interface AddMember {
 @Injectable()
 export class SpaceService {
   constructor(private prisma: PrismaService) {}
+
   async createSpace({
     userId,
     spaceName,
@@ -82,7 +83,7 @@ export class SpaceService {
     };
   }
 
-  async getPickerSpaces(userId: number): Promise<SimpleSpace[]>{
+  async getPickerSpaces(userId: number): Promise<SimpleSpace[]> {
     const members = await this.prisma.member.findMany({
       where: {
         AND: [
@@ -91,18 +92,21 @@ export class SpaceService {
           },
           {
             deleted: false,
-          }
-        ]
+          },
+        ],
       },
       select: {
         role: true,
         space: {
-          select: selectSimpleSpace
-        }
-      }
+          select: selectSimpleSpace,
+        },
+      },
     });
 
-    return members.map((member) => ({...member.space, role: parseRole(member.role)}))
+    return members.map((member) => ({
+      ...member.space,
+      role: parseRole(member.role),
+    }));
   }
 
   async updateSpaceMember(
@@ -188,7 +192,7 @@ export class SpaceService {
         userId_spaceId: {
           userId,
           spaceId,
-        }
+        },
       },
       create: {
         name,
@@ -197,13 +201,13 @@ export class SpaceService {
         user: {
           connect: {
             id: userId,
-          }
+          },
         },
         space: {
           connect: {
-            id: spaceId
-          }
-        }
+            id: spaceId,
+          },
+        },
       },
       update: {
         name,
@@ -214,12 +218,14 @@ export class SpaceService {
       select: {
         space: {
           select: {
-            members: selectApplicationMembers
-          }
-        }
-      }
-    })
-    return data.space.members.map(getApplicationMemberFromPrismaApplicationMember);
+            members: selectApplicationMembers,
+          },
+        },
+      },
+    });
+    return data.space.members.map(
+      getApplicationMemberFromPrismaApplicationMember,
+    );
   }
 
   async deleteSpace(spaceId: number) {
@@ -299,5 +305,4 @@ export class SpaceService {
     });
     return true;
   }
-
 }
