@@ -107,43 +107,43 @@ export class PublishService {
     });
   }
 
-  async deletePublishedQuestionnaire(publishedId: number) {
-    const deletedQuestionnaire =
-      await this.prisma.publishedQuestionnaire.delete({
-        where: {
-          id: publishedId,
-        },
-        select: {
-          questions: {
-            select: {
-              id: true,
-              publishedQuestionnaires: {
-                select: {
-                  id: true,
-                },
-              },
-            },
-          },
-        },
-      });
-
-    // Delete questions that are no longer used
-    const deleteQuestionIds: number[] = deletedQuestionnaire.questions
-      .filter((question) => !question.publishedQuestionnaires.length)
-      .map(({ id }) => id);
-
-    if (!deleteQuestionIds.length) {
-      return true;
-    }
-
-    await this.prisma.publishedQuestion.deleteMany({
-      where: {
-        id: {
-          in: deleteQuestionIds,
-        },
-      },
-    });
-  }
+  // async deletePublishedQuestionnaire(publishedId: number) {
+  //   const deletedQuestionnaire =
+  //     await this.prisma.publishedQuestionnaire.delete({
+  //       where: {
+  //         id: publishedId,
+  //       },
+  //       select: {
+  //         questions: {
+  //           select: {
+  //             id: true,
+  //             publishedQuestionnaires: {
+  //               select: {
+  //                 id: true,
+  //               },
+  //             },
+  //           },
+  //         },
+  //       },
+  //     });
+  //
+  //   // Delete questions that are no longer used
+  //   const deleteQuestionIds: number[] = deletedQuestionnaire.questions
+  //     .filter((question) => !question.publishedQuestionnaires.length)
+  //     .map(({ id }) => id);
+  //
+  //   if (!deleteQuestionIds.length) {
+  //     return true;
+  //   }
+  //
+  //   await this.prisma.publishedQuestion.deleteMany({
+  //     where: {
+  //       id: {
+  //         in: deleteQuestionIds,
+  //       },
+  //     },
+  //   });
+  // }
 
   async publishQuestionnaire(
     questionnaireId: number,

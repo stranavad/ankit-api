@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   Param,
   Post,
@@ -58,12 +57,12 @@ export class PublishController {
     return this.publishService.updatePublishedQuestionnaire(publishedId, body);
   }
 
-  @Delete(':publishedId')
-  @UseGuards(PublishGuard)
-  @Roles(RoleType.EDIT)
-  deletePublishedQuestionnaire(@PublishedId() publishedId: number) {
-    return this.publishService.deletePublishedQuestionnaire(publishedId);
-  }
+  // @Delete(':publishedId')
+  // @UseGuards(PublishGuard)
+  // @Roles(RoleType.EDIT)
+  // deletePublishedQuestionnaire(@PublishedId() publishedId: number) {
+  //   return this.publishService.deletePublishedQuestionnaire(publishedId);
+  // }
 
   @Post()
   @UseGuards(QuestionnaireGuard)
