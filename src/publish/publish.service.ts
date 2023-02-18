@@ -29,14 +29,27 @@ export class PublishService {
 
   async checkIsQuestionnairePublished(
     questionnaireId: number,
-  ): Promise<boolean> {
-    const questionnaire = await this.prisma.publishedQuestionnaire.findFirst({
-      where: { questionnaireId },
-      select: {
-        id: true,
+  ): Promise<{published: boolean, manualPublish: boolean}> {
+    const questionnaire = await this.prisma.questionnaire.findUnique({
+      where: {
+        id: questionnaireId,
       },
+      select: {
+        manualPublish: true,
+        published: {
+          select: {
+            id: true,
+          },
+          take: 1
+        }
+      }
     });
-    return !!questionnaire;
+    
+    if(!questionnaire){
+      return {published: false, manualPublish: true};
+    }
+    
+    return {published: !!questionnaire.published.length, manualPublish: questionnaire.manualPublish}
   }
 
   async checkQuestionnairePublish(
@@ -106,44 +119,6 @@ export class PublishService {
       },
     });
   }
-
-  // async deletePublishedQuestionnaire(publishedId: number) {
-  //   const deletedQuestionnaire =
-  //     await this.prisma.publishedQuestionnaire.delete({
-  //       where: {
-  //         id: publishedId,
-  //       },
-  //       select: {
-  //         questions: {
-  //           select: {
-  //             id: true,
-  //             publishedQuestionnaires: {
-  //               select: {
-  //                 id: true,
-  //               },
-  //             },
-  //           },
-  //         },
-  //       },
-  //     });
-  //
-  //   // Delete questions that are no longer used
-  //   const deleteQuestionIds: number[] = deletedQuestionnaire.questions
-  //     .filter((question) => !question.publishedQuestionnaires.length)
-  //     .map(({ id }) => id);
-  //
-  //   if (!deleteQuestionIds.length) {
-  //     return true;
-  //   }
-  //
-  //   await this.prisma.publishedQuestion.deleteMany({
-  //     where: {
-  //       id: {
-  //         in: deleteQuestionIds,
-  //       },
-  //     },
-  //   });
-  // }
 
   async publishQuestionnaire(
     questionnaireId: number,
@@ -279,5 +254,40 @@ export class PublishService {
     return await this.prisma.publishedQuestionnaire.create(
       publishedQuestionnaireData,
     );
+  }
+
+  async deletePublishedQuestionnaire(publishedId: number){
+    const deletedQuestionnaire = await this.prisma.publishedQuestionnaire.delete({
+        where: {
+            id: publishedId,
+        },
+        select: {
+            questions: {
+                select: {
+                    id: true,
+                    publishedQuestionnaires: {
+                        select: {
+                            id: true,
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Delete questions that are no longer used
+    const deleteQuestionIds: number[] = deletedQuestionnaire.questions.filter((question) => !question.publishedQuestionnaires.length).map(({ id }) => id);
+
+    if(!deleteQuestionIds.length){
+        return true;
+    }
+
+    await this.prisma.publishedQuestion.deleteMany({
+        where: {
+            id: {
+                in: deleteQuestionIds
+            }
+        }
+    })
   }
 }

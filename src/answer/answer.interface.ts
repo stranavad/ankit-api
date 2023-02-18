@@ -1,4 +1,4 @@
-import { Prisma, QuestionType } from '@prisma/client';
+import { Prisma, QuestionType, QuestionnaireStructure } from '@prisma/client';
 
 export interface AnswerQuestion {
   id: number;
@@ -36,3 +36,30 @@ export const selectAnswerQuestion =
       },
     },
   });
+
+
+export interface AnswerData {
+  id: number | null;
+  questionnaireId: number;
+  name: string;
+  description: string | null;
+  structure: QuestionnaireStructure,
+  publishedAt: Date,
+  questions: AnswerQuestion[]
+}
+
+
+// Data to insert interfaces
+export interface AnswerInsert {
+  questionId: number;
+  value: string | undefined;
+  options: number[];
+  required: boolean;
+}
+
+export interface QuestionsMap {
+  id: number;
+  required: boolean;
+  type: QuestionType;
+  options: { id: number}[];
+}

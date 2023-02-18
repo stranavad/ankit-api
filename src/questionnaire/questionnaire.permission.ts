@@ -10,6 +10,7 @@ export const enum UpdateQuestionnairePermission {
   ALLOW_RETURN = 'allowReturn',
   PASSWORD = 'password',
   URL = 'url',
+  MANUAL_PUBLISH = 'manualPublish'
 }
 
 export const updateQuestionnairePermissions: {
@@ -24,4 +25,5 @@ export const updateQuestionnairePermissions: {
   allowReturn: RoleType.EDIT,
   password: RoleType.EDIT,
   url: RoleType.EDIT,
+  manualPublish: RoleType.ADMIN
 };

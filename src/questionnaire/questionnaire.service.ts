@@ -10,6 +10,7 @@ import {
   parseStatus,
   parseStructure,
   selectApplicationQuestionnaire,
+  selectDashboardQuestionnaire,
   selectDetailQuestionnaire,
 } from './questionnaire.interface';
 import { UpdateQuestionnaireDto } from './questionnaire.dto';
@@ -56,6 +57,58 @@ export class QuestionnaireService {
       : null;
   }
 
+  async getDashboardQuestionnairesV2(userId: number): Promise<DashboardQuestionnaire[]>{
+    const questionnaires = await this.prisma.questionnaire.findMany({
+      where: {
+        space: {
+          members: {
+            some: {
+              userId,
+            }
+          }
+        }
+      },
+      select: {
+        ...selectDashboardQuestionnaire,
+        _count: {
+          select: {
+            questionnaireAnswer: true,
+          }
+        },
+        space: {
+          select: {
+            id: true,
+            name: true,
+            members: {
+              where: {
+                userId,
+              },
+              select: {
+                role: true,
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        updated: 'desc',
+      }
+    });
+
+    const data: DashboardQuestionnaire[] = [];
+    questionnaires.map((questionnaire) => {
+      data.push({
+        ...getApplicationQuestionnaireFromPrisma(questionnaire),
+        spaceName: questionnaire.space.name,
+        role: parseRole(questionnaire.space.members[0].role),
+        answerCount: questionnaire._count.questionnaireAnswer
+      })
+    });
+
+    return data;
+  }
+
+  // TODO move over to new version
   async getDashboardQuestionnaires(
     userId: number,
   ): Promise<ApplicationQuestionnaire[]> {
@@ -227,11 +280,12 @@ export class QuestionnaireService {
       role,
       async (value) => {
         if (value === QuestionnaireStatus.ACTIVE) {
-          const isPublished =
+          const {published, manualPublish} =
             await this.publishService.checkIsQuestionnairePublished(
               questionnaireId,
             );
-          if (isPublished) {
+            
+          if (published || !manualPublish ) {
             questionnaireUpdateData.status = parseStatus(value);
           }
         } else {
@@ -257,6 +311,15 @@ export class QuestionnaireService {
         questionnaireUpdateData.allowReturn = value;
       },
     );
+    // Manual publish
+    await this.checkPerms(
+      data.manualPublish,
+      UpdateQuestionnairePermission.MANUAL_PUBLISH,
+      role,
+      (value) => {
+        questionnaireUpdateData.manualPublish = value;
+      }
+    )
     // URL
     await this.checkPerms(
       data.url,
@@ -327,4 +390,5 @@ interface QuestionnaireUpdateData {
   passwordProtected?: boolean;
   password?: string | null;
   url?: string;
+  manualPublish?: boolean;
 }

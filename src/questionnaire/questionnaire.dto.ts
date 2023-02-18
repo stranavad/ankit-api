@@ -38,6 +38,9 @@ export class UpdateQuestionnaireDto {
   allowReturn?: boolean | null = null;
   @IsBoolean()
   @IsOptional()
+  manualPublish?: boolean | null = null;
+  @IsBoolean()
+  @IsOptional()
   passwordProtected?: boolean | null = null;
   password?: string | null = null;
 

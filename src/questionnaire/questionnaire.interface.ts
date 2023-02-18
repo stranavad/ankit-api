@@ -40,6 +40,7 @@ export interface ApplicationQuestionnaire {
   url: string | null;
   status: string;
   spaceId: number;
+  manualPublish: boolean;
 }
 
 export interface DashboardQuestionnaire extends ApplicationQuestionnaire {
@@ -56,6 +57,7 @@ export interface PrismaApplicationQuestionnaire {
   space: {
     id: number;
   };
+  manualPublish: boolean;
 }
 
 export const selectApplicationQuestionnaire =
@@ -64,12 +66,22 @@ export const selectApplicationQuestionnaire =
     name: true,
     url: true,
     status: true,
+    manualPublish: true,
     space: {
       select: {
         id: true,
       },
     },
   });
+
+export const selectDashboardQuestionnaire = 
+Prisma.validator<Prisma.QuestionnaireSelect>()({
+  id: true,
+  name: true,
+  url: true,
+  status: true,
+  manualPublish: true,
+});
 
 export const getApplicationQuestionnaireFromPrisma = (
   data: PrismaApplicationQuestionnaire,
@@ -79,6 +91,7 @@ export const getApplicationQuestionnaireFromPrisma = (
   url: data.url,
   status: data.status,
   spaceId: data.space.id,
+  manualPublish: data.manualPublish
 });
 
 export const getApplicationQuestionnairesFromPrisma = (
@@ -123,6 +136,7 @@ export const selectDetailQuestionnaire =
     allowReturn: true,
     structure: true,
     passwordProtected: true,
+    manualPublish: true,
   });
 
 export const getDetailQuestionnaireFromPrisma = (
@@ -139,6 +153,7 @@ export const getDetailQuestionnaireFromPrisma = (
   allowReturn: data.allowReturn,
   structure: parseStructure(data.structure),
   passwordProtected: data.passwordProtected,
+  manualPublish: data.manualPublish
 });
 
 export interface CurrentQuestionnaire {

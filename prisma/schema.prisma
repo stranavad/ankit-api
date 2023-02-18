@@ -76,6 +76,7 @@ model Questionnaire {
   status              QuestionnaireStatus      @default(PAUSED)
   timeLimit           Int?
   allowReturn         Boolean                  @default(true)
+  manualPublish       Boolean                  @default(false)
   structure           QuestionnaireStructure   @default(LIST)
   passwordProtected   Boolean                  @default(false)
   password            String?                  @db.Char(60)
