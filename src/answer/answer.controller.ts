@@ -1,6 +1,11 @@
-import { Body, Controller, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { LoadQuestionsDto } from './answer.dto';
 import { AnswerQuestionnaireDto, AnswerService } from './answer.service';
+import { QuestionnaireGuard } from 'src/questionnaire.guard';
+import { RoleType } from 'src/role';
+import { Roles } from 'src/roles.decorator';
+import { QuestionnaireId } from 'src/questionnaire.decorator';
+import { AnswerData } from './answer.interface';
 
 @Controller('answer/:id')
 export class AnswerController {
@@ -17,5 +22,12 @@ export class AnswerController {
     @Body() body: AnswerQuestionnaireDto,
   ) {
     return this.answerService.answerQuestionnaire(id, body);
+  }
+
+  @Get('preview')
+  @UseGuards(QuestionnaireGuard)
+  @Roles(RoleType.VIEW)
+  async getQuestionnairePreview(@QuestionnaireId() questionnaireId: number): Promise<AnswerData | null> {
+    return this.answerService.loadAutoPublishQuestions(questionnaireId);
   }
 }

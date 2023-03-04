@@ -10,10 +10,13 @@ import { AccountService } from '../account/account.service';
 import { AuthModule } from '../auth/auth.module';
 import { UserService } from 'src/user/user.service';
 import { PublishService } from '../publish/publish.service';
+import { DesignService } from 'src/design/design.service';
+import { DesignController } from 'src/design/design.controller';
 
 @Module({
   providers: [
     QuestionnaireService,
+    DesignService,
     PrismaService,
     AccountService,
     UserService,
@@ -23,6 +26,7 @@ import { PublishService } from '../publish/publish.service';
     GeneralQuestionnaireController,
     QuestionnaireController,
     DashboardQuestionnaireController,
+    DesignController
   ],
   imports: [AuthModule],
 })

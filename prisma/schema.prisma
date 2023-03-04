@@ -84,6 +84,7 @@ model Questionnaire {
   created             DateTime                 @default(now())
   updated             DateTime                 @updatedAt
   space               Space                    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  design              QuestionnaireDesign?
   questions           Question[]
   published           PublishedQuestionnaire[]
   publishedQuestions  PublishedQuestion[]
@@ -92,6 +93,24 @@ model Questionnaire {
 
   @@index([spaceId])
   @@index([url])
+}
+
+model QuestionnaireDesign {
+  id  Int   @id @default(autoincrement())
+  questionnaireId Int @unique
+  questionnaire   Questionnaire @relation(fields: [questionnaireId], references: [id])
+  font  String?
+  logoUrl String?
+  logoPlacement String?
+  backgroundColor String?
+  backgroundImage String?
+  buttonColor String?
+  buttonTextColor String?
+  textColor String?
+  optionSelectedColor String?
+  optionColor       String?
+
+  @@index([questionnaireId])
 }
 
 enum QuestionnaireStructure {

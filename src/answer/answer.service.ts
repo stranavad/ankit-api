@@ -384,68 +384,7 @@ export class AnswerService {
 
     // Checking whether questionnaire is manual or auto published
     if(!questionnaire.manualPublish) {
-      const autoPublishData = await this.prisma.questionnaire.findUnique({
-        where: {
-          id: questionnaire.id,
-        },
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          structure: true,
-          updated: true,
-          questions: {
-            orderBy: {
-              position: 'asc',
-            },
-            where: {
-              AND: [
-                {
-                  deleted: false,
-                },
-                {
-                  visible: true,
-                }
-              ]
-            },
-            select: {
-              id: true,
-              title: true,
-              required: true,
-              description: true,
-              type: true,
-              options: {
-                select: {
-                  id: true,
-                  value: true,
-                },
-                orderBy: {
-                  position: 'asc',
-                },
-                where: {
-                  deleted: false,
-                }
-              }
-            }
-          }
-        }
-      });
-
-      if(!autoPublishData){
-        return null;
-      }
-
-      const returnData: AnswerData = {
-        id: null,
-        questionnaireId: questionnaire.id,
-        name: autoPublishData.name,
-        description: autoPublishData.description,
-        structure: autoPublishData.structure,
-        publishedAt: autoPublishData.updated,
-        questions: autoPublishData.questions.map((question) => ({...question, publishedId: question.id, questionId: question.id,options: question.options.map((option) => ({...option, optionId: option.id}))})),
-      }
-
-      return returnData;
+      return await this.loadAutoPublishQuestions(questionnaire.id);
     } else {
       const publishedQuestionnaire =
         await this.prisma.publishedQuestionnaire.findFirst({
@@ -501,5 +440,70 @@ export class AnswerService {
 
       return returnData
     }
+  }
+
+  async loadAutoPublishQuestions(questionnaireId: number): Promise<AnswerData | null>{
+    const autoPublishData = await this.prisma.questionnaire.findUnique({
+      where: {
+        id: questionnaireId,
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        structure: true,
+        updated: true,
+        questions: {
+          orderBy: {
+            position: 'asc',
+          },
+          where: {
+            AND: [
+              {
+                deleted: false,
+              },
+              {
+                visible: true,
+              }
+            ]
+          },
+          select: {
+            id: true,
+            title: true,
+            required: true,
+            description: true,
+            type: true,
+            options: {
+              select: {
+                id: true,
+                value: true,
+              },
+              orderBy: {
+                position: 'asc',
+              },
+              where: {
+                deleted: false,
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if(!autoPublishData){
+      return null;
+    }
+
+    const returnData: AnswerData = {
+      id: null,
+      questionnaireId,
+      name: autoPublishData.name,
+      description: autoPublishData.description,
+      structure: autoPublishData.structure,
+      publishedAt: autoPublishData.updated,
+      questions: autoPublishData.questions.map((question) => ({...question, publishedId: question.id, questionId: question.id,options: question.options.map((option) => ({...option, optionId: option.id}))})),
+    }
+
+    return returnData;
   }
 }
