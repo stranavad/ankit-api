@@ -9,19 +9,27 @@ import { UpdateDesignDto } from './design.dto';
 
 @Controller('questionnaire/design/:id')
 export class DesignController {
-    constructor(private designService: DesignService){}
+  constructor(private designService: DesignService) {}
 
-    @Get()
-    @UseGuards(QuestionnaireGuard)
-    @Roles(RoleType.VIEW)
-    async getQuestionnaireDesign(@QuestionnaireId() questionnaireId: number): Promise<null | Design>{
-        return await this.designService.getQuestionnaireDesign(questionnaireId);
-    }
+  @Get()
+  @UseGuards(QuestionnaireGuard)
+  @Roles(RoleType.VIEW)
+  async getQuestionnaireDesign(
+    @QuestionnaireId() questionnaireId: number,
+  ): Promise<null | Design> {
+    return await this.designService.getQuestionnaireDesign(questionnaireId);
+  }
 
-    @Put()
-    @UseGuards(QuestionnaireGuard)
-    @Roles(RoleType.EDIT)
-    async updateQuestionnaireDesign(@QuestionnaireId() questionnaireId: number, @Body() data: UpdateDesignDto): Promise<Design>{
-        return await this.designService.updateQuestionnaireDesign(questionnaireId, data);
-    }
+  @Put()
+  @UseGuards(QuestionnaireGuard)
+  @Roles(RoleType.EDIT)
+  async updateQuestionnaireDesign(
+    @QuestionnaireId() questionnaireId: number,
+    @Body() data: UpdateDesignDto,
+  ): Promise<Design> {
+    return await this.designService.updateQuestionnaireDesign(
+      questionnaireId,
+      data,
+    );
+  }
 }

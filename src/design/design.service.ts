@@ -5,24 +5,27 @@ import { UpdateDesignDto } from './design.dto';
 
 @Injectable()
 export class DesignService {
-    constructor(private prisma: PrismaService){}
+  constructor(private prisma: PrismaService) {}
 
-    async getQuestionnaireDesign(questionnaireId: number): Promise<null | Design> {
-        return await this.prisma.questionnaireDesign.findUnique({
-            where: {
-                questionnaireId
-            },
-            select: selectDesign
-        });
-    }
+  async getQuestionnaireDesign(id: number): Promise<null | Design> {
+    return await this.prisma.questionnaire.findUnique({
+      where: {
+        id,
+      },
+      select: selectDesign,
+    });
+  }
 
-    async updateQuestionnaireDesign(questionnaireId: number, data: UpdateDesignDto): Promise<Design> {
-        return await this.prisma.questionnaireDesign.update({
-            where: {
-                questionnaireId
-            },
-            data,
-            select: selectDesign
-        });
-    }
+  async updateQuestionnaireDesign(
+    id: number,
+    data: UpdateDesignDto,
+  ): Promise<Design> {
+    return await this.prisma.questionnaire.update({
+      where: {
+        id,
+      },
+      data,
+      select: selectDesign,
+    });
+  }
 }

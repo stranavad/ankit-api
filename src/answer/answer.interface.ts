@@ -1,4 +1,5 @@
 import { Prisma, QuestionType, QuestionnaireStructure } from '@prisma/client';
+import { Design } from '../design/design.interface';
 
 export interface AnswerQuestion {
   id: number;
@@ -37,17 +38,16 @@ export const selectAnswerQuestion =
     },
   });
 
-
 export interface AnswerData {
   id: number | null;
   questionnaireId: number;
   name: string;
   description: string | null;
-  structure: QuestionnaireStructure,
-  publishedAt: Date,
-  questions: AnswerQuestion[]
+  structure: QuestionnaireStructure;
+  publishedAt: Date;
+  design: Design;
+  questions: AnswerQuestion[];
 }
-
 
 // Data to insert interfaces
 export interface AnswerInsert {
@@ -61,5 +61,5 @@ export interface QuestionsMap {
   id: number;
   required: boolean;
   type: QuestionType;
-  options: { id: number}[];
+  options: { id: number }[];
 }

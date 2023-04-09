@@ -1,10 +1,19 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { LoadQuestionsDto } from './answer.dto';
-import { AnswerData, AnswerInsert, QuestionsMap, selectAnswerQuestion } from './answer.interface';
+import {
+  AnswerData,
+  AnswerInsert,
+  QuestionsMap,
+  selectAnswerQuestion,
+} from './answer.interface';
 import * as bcrypt from 'bcrypt';
 import { QuestionnaireStatus, QuestionType } from '@prisma/client';
 import { parseStatus } from 'src/questionnaire/questionnaire.interface';
+import {
+  getDesignFromQuestionnaire,
+  selectDesign,
+} from '../design/design.interface';
 
 export interface AnswerQuestionnaireDto {
   questionnaireId: number;
@@ -30,19 +39,26 @@ enum ErrorMessage {
   PUBLISHED_NOT_FOUND,
 }
 
-
-const errorMessages: {[key: number]: {message:string, code: number}} = {
-  [ErrorMessage.NOT_FOUND]: {message: "Questionnaire not found", code: 601},
-  [ErrorMessage.NOT_ACTIVE]: {message: "Questionnaire is not collecting any responses at the moment", code: 602},
-  [ErrorMessage.PUBLISHED_NOT_FOUND]: {message: "This published version does not exist on this questionnaire", code: 603},
+const errorMessages: { [key: number]: { message: string; code: number } } = {
+  [ErrorMessage.NOT_FOUND]: { message: 'Questionnaire not found', code: 601 },
+  [ErrorMessage.NOT_ACTIVE]: {
+    message: 'Questionnaire is not collecting any responses at the moment',
+    code: 602,
+  },
+  [ErrorMessage.PUBLISHED_NOT_FOUND]: {
+    message: 'This published version does not exist on this questionnaire',
+    code: 603,
+  },
 };
-
 
 @Injectable()
 export class AnswerService {
   constructor(private prisma: PrismaService) {}
 
-  async answerQuestionnaire(questionnaireId: number, data: AnswerQuestionnaireDto) {
+  async answerQuestionnaire(
+    questionnaireId: number,
+    data: AnswerQuestionnaireDto,
+  ) {
     const questionnaire = await this.prisma.questionnaire.findUnique({
       where: {
         id: questionnaireId,
@@ -50,46 +66,56 @@ export class AnswerService {
       select: {
         status: true,
         manualPublish: true,
-        published: data.publishedQuestionnaireId ? {
-          where: {
-            id: data.publishedQuestionnaireId
-          },
-          select: {
-            id: true,
-          },
-          take: 1
-        } : undefined
-      }
+        published: data.publishedQuestionnaireId
+          ? {
+              where: {
+                id: data.publishedQuestionnaireId,
+              },
+              select: {
+                id: true,
+              },
+              take: 1,
+            }
+          : undefined,
+      },
     });
 
-    if(!questionnaire) {
+    if (!questionnaire) {
       return {
         ...errorMessages[ErrorMessage.NOT_FOUND],
-        status: null
-      }
+        status: null,
+      };
     }
 
-    if(questionnaire.status !== QuestionnaireStatus.ACTIVE) {
+    if (questionnaire.status !== QuestionnaireStatus.ACTIVE) {
       return {
         ...errorMessages[ErrorMessage.NOT_ACTIVE],
-        status: parseStatus(questionnaire.status)
-      }
+        status: parseStatus(questionnaire.status),
+      };
     }
-    
+
     // If we cannot find published questionnaire ID, we answer directly to latest version of questionnaire
-    if((data.publishedQuestionnaireId && questionnaire.manualPublish) && (!questionnaire.published.length || questionnaire.published[0].id !== data.publishedQuestionnaireId)){
+    if (
+      data.publishedQuestionnaireId &&
+      questionnaire.manualPublish &&
+      (!questionnaire.published.length ||
+        questionnaire.published[0].id !== data.publishedQuestionnaireId)
+    ) {
       return await this.answerAutoPublishQuestionnaire(questionnaireId, data);
     }
 
     // Determine whether questionnaire is auto or manual publish
-    if(questionnaire.manualPublish) {
+    if (questionnaire.manualPublish) {
       return await this.answerManualPublishQuestionnaire(questionnaireId, data);
     }
 
     return await this.answerAutoPublishQuestionnaire(questionnaireId, data);
   }
 
-  async answerAutoPublishQuestionnaire(questionnaireId: number, data: AnswerQuestionnaireDto){
+  async answerAutoPublishQuestionnaire(
+    questionnaireId: number,
+    data: AnswerQuestionnaireDto,
+  ) {
     const questionnaire = await this.prisma.questionnaire.findUnique({
       where: {
         id: questionnaireId,
@@ -118,24 +144,27 @@ export class AnswerService {
             ],
           },
         },
-      }
+      },
     });
 
-    if(!questionnaire) {
+    if (!questionnaire) {
       return {
         ...errorMessages[ErrorMessage.PUBLISHED_NOT_FOUND],
         status: null,
-      }
+      };
     }
 
-    const answers = this.validateQuestions(questionnaire.questions, data.answers);
+    const answers = this.validateQuestions(
+      questionnaire.questions,
+      data.answers,
+    );
 
     if (!answers) {
       console.error('Did not answer to all questions');
       return 'You have to answer to all required questions';
-    };
+    }
 
-    return await this.prisma.questionnaireAnswer.create({
+    return this.prisma.questionnaireAnswer.create({
       data: {
         questionnaire: {
           connect: {
@@ -157,17 +186,19 @@ export class AnswerService {
     });
   }
 
-  validateQuestions(questions: QuestionsMap[], answers: Answer[]): AnswerInsert[]{
+  validateQuestions(
+    questions: QuestionsMap[],
+    answers: Answer[],
+  ): AnswerInsert[] {
     const answersInsert: AnswerInsert[] = [];
     const questionsMap = new Map<number, QuestionsMap>();
     const requiredQuestions: number[] = [];
-
 
     // Generating required questions and mapping questions for faster access later on
     questions.map((question) => {
       questionsMap.set(question.id, question);
 
-      if(question.required){
+      if (question.required) {
         requiredQuestions.push(question.id);
       }
     });
@@ -184,9 +215,7 @@ export class AnswerService {
       let optionIds: number[] = [];
       let value: string | undefined = undefined;
 
-      const allQuestionOptions = question.options.map(
-        (option) => option.id,
-      );
+      const allQuestionOptions = question.options.map((option) => option.id);
 
       if (
         question.type === QuestionType.SELECT &&
@@ -219,7 +248,7 @@ export class AnswerService {
           options: optionIds,
           required: question.required,
         });
-      };
+      }
     });
 
     const answeredIds = answers.map((answer) => answer.questionId);
@@ -235,55 +264,68 @@ export class AnswerService {
     return answersInsert;
   }
 
-
-  async answerManualPublishQuestionnaire(questionnaireId: number, data: AnswerQuestionnaireDto) {
-    const publishedQuestionnaire = await this.prisma.publishedQuestionnaire.findUnique({
-      where: {
-        // Published ID is validated in the first request
-        id: data.publishedQuestionnaireId
-      },
-      select: {
-        id: true,
-        questions: {
-          select: {
-            questionId: true,
-            required: true,
-            type: true,
-            options: {
-              select: {
-                optionId: true,
+  async answerManualPublishQuestionnaire(
+    questionnaireId: number,
+    data: AnswerQuestionnaireDto,
+  ) {
+    const publishedQuestionnaire =
+      await this.prisma.publishedQuestionnaire.findUnique({
+        where: {
+          // Published ID is validated in the first request
+          id: data.publishedQuestionnaireId,
+        },
+        select: {
+          id: true,
+          questions: {
+            select: {
+              questionId: true,
+              required: true,
+              type: true,
+              options: {
+                select: {
+                  optionId: true,
+                },
               },
             },
-          },
-          where: {
-            AND: [
-              {
-                deleted: false,
-              },
-              {
-                visible: true,
-              },
-            ],
+            where: {
+              AND: [
+                {
+                  deleted: false,
+                },
+                {
+                  visible: true,
+                },
+              ],
+            },
           },
         },
-      }
-    });
+      });
 
-    if(!publishedQuestionnaire) {
+    if (!publishedQuestionnaire) {
       return {
         ...errorMessages[ErrorMessage.PUBLISHED_NOT_FOUND],
         status: null,
-      }
+      };
     }
 
-    const answers = this.validateQuestions(publishedQuestionnaire.questions.map((question) => ({...question, id: question.questionId, options: question.options.map((option) => ({...option, id: option.optionId}))})), data.answers);
+    const answers = this.validateQuestions(
+      publishedQuestionnaire.questions.map((question) => ({
+        ...question,
+        id: question.questionId,
+        options: question.options.map((option) => ({
+          ...option,
+          id: option.optionId,
+        })),
+      })),
+      data.answers,
+    );
 
-    if(!answers){
+    if (!answers) {
       // TODO add error message
       return null;
     }
-    
-    return await this.prisma.questionnaireAnswer.create({
+
+    return this.prisma.questionnaireAnswer.create({
       data: {
         questionnaire: {
           connect: {
@@ -309,8 +351,10 @@ export class AnswerService {
     });
   }
 
-
-  async loadQuestions(questionnaireHash: string, data: LoadQuestionsDto) {
+  async loadQuestions(
+    questionnaireHash: string,
+    data: LoadQuestionsDto,
+  ): Promise<AnswerData | null> {
     // First we check whether questionnaire is password protected
     const questionnaire = await this.prisma.questionnaire.findUnique({
       where: {
@@ -322,6 +366,7 @@ export class AnswerService {
         passwordProtected: true,
         password: true,
         manualPublish: true,
+        ...selectDesign,
       },
     });
 
@@ -341,6 +386,9 @@ export class AnswerService {
         {
           status: 469,
           error: 'Status is not active',
+          data: {
+            design: getDesignFromQuestionnaire(questionnaire),
+          },
         },
         469,
       );
@@ -365,6 +413,9 @@ export class AnswerService {
           {
             status: 420,
             error: 'Incorrect password',
+            data: {
+              design: getDesignFromQuestionnaire(questionnaire),
+            },
           },
           420,
         );
@@ -376,6 +427,9 @@ export class AnswerService {
           {
             status: 420,
             error: 'Incorrect password',
+            data: {
+              design: getDesignFromQuestionnaire(questionnaire),
+            },
           },
           420,
         );
@@ -383,7 +437,7 @@ export class AnswerService {
     }
 
     // Checking whether questionnaire is manual or auto published
-    if(!questionnaire.manualPublish) {
+    if (!questionnaire.manualPublish) {
       return await this.loadAutoPublishQuestions(questionnaire.id);
     } else {
       const publishedQuestionnaire =
@@ -419,6 +473,7 @@ export class AnswerService {
                 name: true,
                 description: true,
                 structure: true,
+                ...selectDesign,
               },
             },
           },
@@ -435,14 +490,23 @@ export class AnswerService {
         description: publishedQuestionnaire.questionnaire.description,
         structure: publishedQuestionnaire.questionnaire.structure,
         publishedAt: publishedQuestionnaire.publishedAt,
-        questions: publishedQuestionnaire.questions.map((question) => ({...question, publishedId: question.id, id: question.questionId})),
-      }
+        design: getDesignFromQuestionnaire(
+          publishedQuestionnaire.questionnaire,
+        ),
+        questions: publishedQuestionnaire.questions.map((question) => ({
+          ...question,
+          publishedId: question.id,
+          id: question.questionId,
+        })),
+      };
 
-      return returnData
+      return returnData;
     }
   }
 
-  async loadAutoPublishQuestions(questionnaireId: number): Promise<AnswerData | null>{
+  async loadAutoPublishQuestions(
+    questionnaireId: number,
+  ): Promise<AnswerData | null> {
     const autoPublishData = await this.prisma.questionnaire.findUnique({
       where: {
         id: questionnaireId,
@@ -453,6 +517,7 @@ export class AnswerService {
         description: true,
         structure: true,
         updated: true,
+        ...selectDesign,
         questions: {
           orderBy: {
             position: 'asc',
@@ -464,8 +529,8 @@ export class AnswerService {
               },
               {
                 visible: true,
-              }
-            ]
+              },
+            ],
           },
           select: {
             id: true,
@@ -483,14 +548,14 @@ export class AnswerService {
               },
               where: {
                 deleted: false,
-              }
-            }
-          }
-        }
-      }
+              },
+            },
+          },
+        },
+      },
     });
 
-    if(!autoPublishData){
+    if (!autoPublishData) {
       return null;
     }
 
@@ -501,9 +566,17 @@ export class AnswerService {
       description: autoPublishData.description,
       structure: autoPublishData.structure,
       publishedAt: autoPublishData.updated,
-      questions: autoPublishData.questions.map((question) => ({...question, publishedId: question.id, questionId: question.id,options: question.options.map((option) => ({...option, optionId: option.id}))})),
-    }
-
+      design: getDesignFromQuestionnaire(autoPublishData),
+      questions: autoPublishData.questions.map((question) => ({
+        ...question,
+        publishedId: question.id,
+        questionId: question.id,
+        options: question.options.map((option) => ({
+          ...option,
+          optionId: option.id,
+        })),
+      })),
+    };
     return returnData;
   }
 }
