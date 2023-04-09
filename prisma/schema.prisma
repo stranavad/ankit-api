@@ -76,6 +76,7 @@ model Questionnaire {
   status              QuestionnaireStatus      @default(PAUSED)
   timeLimit           Int?
   allowReturn         Boolean                  @default(true)
+  manualPublish       Boolean                  @default(false)
   structure           QuestionnaireStructure   @default(LIST)
   passwordProtected   Boolean                  @default(false)
   password            String?                  @db.Char(60)
@@ -83,6 +84,18 @@ model Questionnaire {
   created             DateTime                 @default(now())
   updated             DateTime                 @updatedAt
   space               Space                    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  font  String?
+  logoUrl String?
+  logoPlacement String?
+  backgroundColor String?
+  backgroundImage String?
+  optionSelectedColor String?
+  optionSelectedText String?
+  optionColor String?
+  optionText String?
+  buttonColor String?
+  buttonText String?
+  textColor String?
   questions           Question[]
   published           PublishedQuestionnaire[]
   publishedQuestions  PublishedQuestion[]
@@ -92,6 +105,7 @@ model Questionnaire {
   @@index([spaceId])
   @@index([url])
 }
+
 
 enum QuestionnaireStructure {
   INDIVIDUAL

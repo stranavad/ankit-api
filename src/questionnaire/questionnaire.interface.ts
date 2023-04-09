@@ -4,31 +4,35 @@ import { ApplicationMember } from '../member/member.interface';
 import { QuestionnaireStructure } from '@prisma/client';
 import { RoleType } from 'src/role';
 
-export const parseStructure = (structure: string | undefined): QuestionnaireStructure => {
+export const parseStructure = (
+  structure: string | undefined,
+): QuestionnaireStructure => {
   switch (structure) {
     case QuestionnaireStructure.LIST:
-    case "list": 
+    case 'list':
       return QuestionnaireStructure.LIST;
     case QuestionnaireStructure.INDIVIDUAL:
-    case "individual":  
+    case 'individual':
       return QuestionnaireStructure.INDIVIDUAL;
     default:
       return QuestionnaireStructure.LIST;
   }
 };
 
-export const parseStatus = (status: string | undefined): QuestionnaireStatus | undefined => {
-  switch(status){
+export const parseStatus = (
+  status: string | undefined,
+): QuestionnaireStatus | undefined => {
+  switch (status) {
     case QuestionnaireStatus.ACTIVE:
-    case "active":
+    case 'active':
       return QuestionnaireStatus.ACTIVE;
     case QuestionnaireStatus.PAUSED:
-    case "paused":
-      return QuestionnaireStatus.PAUSED
-    default :
-      return undefined;      
+    case 'paused':
+      return QuestionnaireStatus.PAUSED;
+    default:
+      return undefined;
   }
-}
+};
 
 export interface ApplicationQuestionnaire {
   id: number;
@@ -36,6 +40,7 @@ export interface ApplicationQuestionnaire {
   url: string | null;
   status: string;
   spaceId: number;
+  manualPublish: boolean;
 }
 
 export interface DashboardQuestionnaire extends ApplicationQuestionnaire {
@@ -52,6 +57,7 @@ export interface PrismaApplicationQuestionnaire {
   space: {
     id: number;
   };
+  manualPublish: boolean;
 }
 
 export const selectApplicationQuestionnaire =
@@ -60,12 +66,22 @@ export const selectApplicationQuestionnaire =
     name: true,
     url: true,
     status: true,
+    manualPublish: true,
     space: {
       select: {
         id: true,
       },
     },
   });
+
+export const selectDashboardQuestionnaire = 
+Prisma.validator<Prisma.QuestionnaireSelect>()({
+  id: true,
+  name: true,
+  url: true,
+  status: true,
+  manualPublish: true,
+});
 
 export const getApplicationQuestionnaireFromPrisma = (
   data: PrismaApplicationQuestionnaire,
@@ -75,6 +91,7 @@ export const getApplicationQuestionnaireFromPrisma = (
   url: data.url,
   status: data.status,
   spaceId: data.space.id,
+  manualPublish: data.manualPublish
 });
 
 export const getApplicationQuestionnairesFromPrisma = (
@@ -91,6 +108,7 @@ export interface DetailQuestionnaire extends ApplicationQuestionnaire {
   structure: QuestionnaireStructure;
   passwordProtected: boolean;
 }
+
 export interface PrismaDetailQuestionnaire
   extends PrismaApplicationQuestionnaire {
   description: string | null;
@@ -118,6 +136,7 @@ export const selectDetailQuestionnaire =
     allowReturn: true,
     structure: true,
     passwordProtected: true,
+    manualPublish: true,
   });
 
 export const getDetailQuestionnaireFromPrisma = (
@@ -134,6 +153,7 @@ export const getDetailQuestionnaireFromPrisma = (
   allowReturn: data.allowReturn,
   structure: parseStructure(data.structure),
   passwordProtected: data.passwordProtected,
+  manualPublish: data.manualPublish
 });
 
 export interface CurrentQuestionnaire {

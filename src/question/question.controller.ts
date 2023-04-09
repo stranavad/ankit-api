@@ -112,12 +112,10 @@ export class QuestionController {
     return this.questionService.updateQuestionType(questionId, data);
   }
 
-  @Delete(":questionId")
+  @Delete(':questionId')
   @UseGuards(QuestionGuard)
   @Roles(RoleType.EDIT)
-  deleteQuestion(
-    @QuestionId() questionId: number
-  ){
+  deleteQuestion(@QuestionId() questionId: number) {
     return this.questionService.deleteQuestion(questionId);
   }
 

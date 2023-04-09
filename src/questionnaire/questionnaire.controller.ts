@@ -21,7 +21,6 @@ import { QuestionnaireId } from '../questionnaire.decorator';
 import { Role } from '../role.decorator';
 import {
   ApplicationQuestionnaire,
-  CurrentQuestionnaire,
   DetailQuestionnaire,
 } from './questionnaire.interface';
 import { QuestionnaireGuard } from '../questionnaire.guard';
@@ -30,11 +29,13 @@ import { AuthGuard } from 'src/auth.guard';
 
 @Controller('questionnaire/dashboard')
 export class DashboardQuestionnaireController {
-  constructor(private questionnaireService: QuestionnaireService){}
+  constructor(private questionnaireService: QuestionnaireService) {}
 
   @Get()
   @UseGuards(AuthGuard)
-  getDashboardQuestionnaires(@UserId() userId: number): Promise<ApplicationQuestionnaire[]>{
+  getDashboardQuestionnaires(
+    @UserId() userId: number,
+  ): Promise<ApplicationQuestionnaire[]> {
     return this.questionnaireService.getDashboardQuestionnaires(userId);
   }
 }
@@ -92,21 +93,6 @@ export class QuestionnaireController {
       data,
       role,
       questionnaireId,
-    );
-  }
-
-  @Get('current')
-  @UseGuards(QuestionnaireGuard)
-  @Roles(RoleType.VIEW)
-  getCurrentInformation(
-    @QuestionnaireId() questionnaireId: number,
-    @SpaceId() spaceId: number,
-    @UserId() userId: number,
-  ): Promise<CurrentQuestionnaire | null> {
-    return this.questionnaireService.getCurrentInformation(
-      questionnaireId,
-      spaceId,
-      userId,
     );
   }
 

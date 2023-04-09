@@ -1,11 +1,8 @@
 import {
   Body,
   Controller,
-  HttpException,
-  HttpStatus,
   Param,
   ParseIntPipe,
-  Post,
   Put,
   UseGuards,
 } from '@nestjs/common';
@@ -14,22 +11,9 @@ import { RolesGuard } from '../roles.guard';
 import { Roles } from '../roles.decorator';
 import { RoleType } from '../role';
 import { ApplicationMember } from './member.interface';
-import { AcceptSpaceInvitationDto, UpdateRoleDto } from './member.dto';
+import { UpdateRoleDto } from './member.dto';
 import { MemberId } from '../member.decorator';
 import { Role } from '../role.decorator';
-
-@Controller('member')
-export class MemberController {
-  constructor(private memberService: MemberService) {}
-
-  // IMPORTANT
-  // DOESN'T HAVE AUTH GUARD
-  @Post()
-  async createDefaultMember(@Body('userId') userId: number) {
-    await this.memberService.createDefaultMember(userId);
-    return;
-  }
-}
 
 @Controller('space/:id/member')
 export class SpaceMemberController {

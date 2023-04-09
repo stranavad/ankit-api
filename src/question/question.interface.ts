@@ -23,7 +23,7 @@ export const selectQuestion = Prisma.validator<Prisma.QuestionSelect>()({
     },
     where: {
       deleted: false,
-    }
+    },
   },
 });
 
@@ -31,13 +31,13 @@ export const selectQuestions = Prisma.validator<Prisma.QuestionnaireSelect>()({
   questions: {
     select: selectQuestion,
     orderBy: {
-      position: 'asc'
+      position: 'asc',
     },
     where: {
-      deleted: false
-    }
-  }
-})
+      deleted: false,
+    },
+  },
+});
 
 export interface PrismaQuestion extends Omit<Question, 'type'> {
   type: string;

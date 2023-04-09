@@ -5,6 +5,6 @@ import { AnswerService } from './answer.service';
 
 @Module({
   controllers: [AnswerController],
-  providers: [AnswerService, PrismaService]
+  providers: [AnswerService, PrismaService],
 })
 export class AnswerModule {}
